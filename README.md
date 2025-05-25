@@ -8,3 +8,4 @@ Currently it can be used for:
 * Hashing (SHA256, SHA512, RIPEMD160)
 * "Cryptographically-secure" random numbers generation
 * BigNumbers math
+* Data Encoding/Decoding (Base64, Base58Check, Hex)
