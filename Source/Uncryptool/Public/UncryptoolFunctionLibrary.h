@@ -14,6 +14,15 @@ enum class EUncryptoolHash : uint8
 	RIPEMD160
 };
 
+UENUM()
+enum class EUncryptoolEllipticCurve : uint8
+{
+	PRIME256V1,
+	SECP256K1,
+	SECP384R1,
+	SECP521R1
+};
+
 USTRUCT(BlueprintType)
 struct FUncryptoolBigNum
 {

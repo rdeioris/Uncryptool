@@ -38,6 +38,8 @@ struct FUncryptoolBytes
 	const int32 Size;
 };
 
+enum class EUncryptoolEllipticCurve : uint8;
+
 namespace Uncryptool
 {
 	/*
@@ -73,4 +75,10 @@ namespace Uncryptool
 	UNCRYPTOOL_API bool EncryptAES256CBC(const FUncryptoolBytes& InputBytes, const FUncryptoolBytes& Key, const FUncryptoolBytes& Iv, TArray<uint8>& EncryptedBytes, FString& ErrorMessage);
 	UNCRYPTOOL_API bool DecryptChaCha20(const FUncryptoolBytes& EncryptedBytes, const FUncryptoolBytes& Key, const FUncryptoolBytes& Nonce, TArray<uint8>& OutputBytes, FString& ErrorMessage);
 	UNCRYPTOOL_API bool EncryptChaCha20(const FUncryptoolBytes& InputBytes, const FUncryptoolBytes& Key, const FUncryptoolBytes& Nonce, TArray<uint8>& EncryptedBytes, FString& ErrorMessage);
+
+	/*
+	* Elliptic Curve Cryptography (ECC)
+	*/
+
+	UNCRYPTOOL_API bool GenerateECKey(const EUncryptoolEllipticCurve EllipticCurve, TArray<uint8>& PrivateKey, TArray<uint8>& PublicKey, FString& ErrorMessage);
 }

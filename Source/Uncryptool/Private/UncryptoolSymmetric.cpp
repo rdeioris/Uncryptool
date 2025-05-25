@@ -51,7 +51,7 @@ namespace Uncryptool
 			return false;
 		}
 
-		OutputBytes.SetNum(EncryptedBytes.Num() + EVP_CIPHER_block_size(EVP_aes_256_cbc()));
+		OutputBytes.SetNum(EncryptedBytes.Num() + EVP_CIPHER_block_size(EVP_aes_256_cbc()), EAllowShrinking::No);
 		int32 OutputSize = OutputBytes.Num();
 		if (EVP_DecryptUpdate(Context, OutputBytes.GetData(), &OutputSize, EncryptedBytes.GetData(), EncryptedBytes.Num()) <= 0)
 		{
@@ -106,7 +106,7 @@ namespace Uncryptool
 			return false;
 		}
 
-		EncryptedBytes.SetNum(InputBytes.Num() + EVP_CIPHER_block_size(EVP_aes_256_cbc()));
+		EncryptedBytes.SetNum(InputBytes.Num() + EVP_CIPHER_block_size(EVP_aes_256_cbc()), EAllowShrinking::No);
 		int32 OutputSize = EncryptedBytes.Num();
 		if (EVP_EncryptUpdate(Context, EncryptedBytes.GetData(), &OutputSize, InputBytes.GetData(), InputBytes.Num()) <= 0)
 		{
@@ -161,7 +161,7 @@ namespace Uncryptool
 			return false;
 		}
 
-		OutputBytes.SetNum(EncryptedBytes.Num());
+		OutputBytes.SetNum(EncryptedBytes.Num(), EAllowShrinking::No);
 		int32 OutputSize = OutputBytes.Num();
 		if (EVP_DecryptUpdate(Context, OutputBytes.GetData(), &OutputSize, EncryptedBytes.GetData(), EncryptedBytes.Num()) <= 0)
 		{
@@ -214,7 +214,7 @@ namespace Uncryptool
 			return false;
 		}
 
-		EncryptedBytes.SetNum(InputBytes.Num());
+		EncryptedBytes.SetNum(InputBytes.Num(), EAllowShrinking::No);
 		int32 OutputSize = EncryptedBytes.Num();
 		if (EVP_EncryptUpdate(Context, EncryptedBytes.GetData(), &OutputSize, InputBytes.GetData(), InputBytes.Num()) <= 0)
 		{
