@@ -11,3 +11,7 @@ Currently it can be used for:
 * Data Encoding/Decoding (Base64, Base58Check, Hex)
 
 It wraps the OpenSSL library included in standard Unreal Engine distributions.
+
+## Usage
+
+## Technical Notes
