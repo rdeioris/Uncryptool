@@ -9,3 +9,5 @@ Currently it can be used for:
 * "Cryptographically-secure" random numbers generation
 * BigNumbers math
 * Data Encoding/Decoding (Base64, Base58Check, Hex)
+
+It wraps the OpenSSL library included in standard Unreal Engine distributions.
