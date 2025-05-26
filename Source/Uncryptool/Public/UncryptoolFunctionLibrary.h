@@ -11,7 +11,8 @@ enum class EUncryptoolHash : uint8
 {
 	SHA256,
 	SHA512,
-	RIPEMD160
+	RIPEMD160,
+	Unknown = 0xff
 };
 
 UENUM()
@@ -20,7 +21,17 @@ enum class EUncryptoolEllipticCurve : uint8
 	PRIME256V1,
 	SECP256K1,
 	SECP384R1,
-	SECP521R1
+	SECP521R1,
+	Unknown = 0xff
+};
+
+UENUM()
+enum class EUncryptoolKey : uint8
+{
+	RSA,
+	DSA,
+	EC,
+	Unknown = 0xff
 };
 
 USTRUCT(BlueprintType)

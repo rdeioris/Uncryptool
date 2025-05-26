@@ -39,6 +39,7 @@ struct FUncryptoolBytes
 };
 
 enum class EUncryptoolEllipticCurve : uint8;
+enum class EUncryptoolHash : uint8;
 
 namespace Uncryptool
 {
@@ -81,4 +82,5 @@ namespace Uncryptool
 	*/
 
 	UNCRYPTOOL_API bool GenerateECKey(const EUncryptoolEllipticCurve EllipticCurve, TArray<uint8>& PrivateKey, TArray<uint8>& PublicKey, FString& ErrorMessage);
+	UNCRYPTOOL_API bool ECDSADigestSign(const EUncryptoolEllipticCurve EllipticCurve, const FUncryptoolBytes& PrivateKey, const FUncryptoolBytes& InputBytes, const EUncryptoolHash Hash, TArray<uint8>& OutputSignature, FString& ErrorMessage);
 }
