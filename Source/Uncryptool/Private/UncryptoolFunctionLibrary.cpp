@@ -1,7 +1,6 @@
 // Copyright 2025 - Roberto De Ioris
 
 #include "UncryptoolFunctionLibrary.h"
-#include "Uncryptool.h"
 
 TArray<uint8> UUncryptoolFunctionLibrary::UTF8StringToBytes(const FString& String)
 {

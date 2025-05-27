@@ -1,7 +1,6 @@
 // Copyright 2025 - Roberto De Ioris
 
 #include "UncryptoolFunctionLibrary.h"
-#include "Uncryptool.h"
 
 #define UI UI_ST
 THIRD_PARTY_INCLUDES_START
