@@ -78,4 +78,10 @@ namespace Uncryptool
 
 		return true;
 	}
+
+	bool PEMToPrivateKey(const FString& PEMString, FUncryptoolPrivateKey& PrivateKey, FString& ErrorMessage)
+	{
+		TArray<uint8> PEMBytes = UTF8StringToBytes(PEMString);
+		return PEMToPrivateKey(PEMBytes, PrivateKey, ErrorMessage);
+	}
 }

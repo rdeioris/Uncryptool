@@ -150,6 +150,7 @@ namespace Uncryptool
 	*/
 
 	UNCRYPTOOL_API bool PEMToPrivateKey(const FUncryptoolBytes& PEMBytes, FUncryptoolPrivateKey& PrivateKey, FString& ErrorMessage);
+	UNCRYPTOOL_API bool PEMToPrivateKey(const FString& PEMString, FUncryptoolPrivateKey& PrivateKey, FString& ErrorMessage);
 }
 
 
