@@ -84,4 +84,49 @@ namespace Uncryptool
 		TArray<uint8> PEMBytes = UTF8StringToBytes(PEMString);
 		return PEMToPrivateKey(PEMBytes, PrivateKey, ErrorMessage);
 	}
+
+	bool PublicKeyMatchesPrivateKey(const FUncryptoolPublicKey& PublicKey, const FUncryptoolPrivateKey& PrivateKey, FString& ErrorMessage)
+	{
+		if (PublicKey.Type != PrivateKey.Type)
+		{
+			ErrorMessage = "Keys type does not match";
+			return false;
+		}
+
+		if (PublicKey.Bits != PrivateKey.Bits)
+		{
+			ErrorMessage = "Keys bit size does not match";
+			return false;
+		}
+
+		const uint8* PublicKeyDERPtr = PublicKey.DER.GetData();
+		EVP_PKEY* EVPPublicKey = d2i_PUBKEY(nullptr, &PublicKeyDERPtr, PublicKey.DER.Num());
+		if (!EVPPublicKey)
+		{
+			ErrorMessage = GetOpenSSLError();
+			return false;
+		}
+
+		const uint8* PrivateKeyDERPtr = PrivateKey.DER.GetData();
+		EVP_PKEY* EVPPrivateKey = d2i_AutoPrivateKey(nullptr, &PrivateKeyDERPtr, PrivateKey.DER.Num());
+		if (!EVPPrivateKey)
+		{
+			ErrorMessage = GetOpenSSLError();
+			EVP_PKEY_free(EVPPublicKey);
+			return false;
+		}
+
+		if (EVP_PKEY_cmp(EVPPublicKey, EVPPrivateKey) <= 0)
+		{
+			ErrorMessage = GetOpenSSLError();
+			EVP_PKEY_free(EVPPrivateKey);
+			EVP_PKEY_free(EVPPublicKey);
+			return false;
+		}
+
+		EVP_PKEY_free(EVPPrivateKey);
+		EVP_PKEY_free(EVPPublicKey);
+
+		return true;
+	}
 }

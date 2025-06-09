@@ -10,8 +10,13 @@ UENUM()
 enum class EUncryptoolHash : uint8
 {
 	SHA256,
+	SHA384,
 	SHA512,
 	RIPEMD160,
+	SHA1,
+	SHA224,
+	BLAKE2b512,
+	BLAKE2s256,
 	Unknown = 0xff
 };
 
@@ -31,6 +36,7 @@ enum class EUncryptoolKey : uint8
 	RSA,
 	DSA,
 	EC,
+	ED,
 	Unknown = 0xff
 };
 
@@ -79,6 +85,10 @@ protected:
 
 struct FUncryptoolBytes
 {
+	FUncryptoolBytes(const char* Chars) : Ptr(reinterpret_cast<const uint8*>(Chars)), Size(FCStringAnsi::Strlen(Chars))
+	{
+	}
+
 	FUncryptoolBytes(const std::initializer_list<uint8>& Bytes) : Ptr(Bytes.begin()), Size(Bytes.size())
 	{
 	}
@@ -104,6 +114,64 @@ struct FUncryptoolBytes
 
 namespace Uncryptool
 {
+	template<typename T>
+	T StructNumericCast(const FUncryptoolStructArgument& StructArgument);
+}
+
+USTRUCT(BlueprintType)
+struct FUncryptoolStructArgument
+{
+	GENERATED_BODY()
+
+	enum class Type { Raw, Int64, UInt64, Int32, UInt32, Int16, UInt16, Int8, UInt8, Float, Double, Bool, Invalid = 0xff };
+
+	FUncryptoolStructArgument() : InternalType(Type::Invalid), Number(0LLU) {};
+
+	FUncryptoolStructArgument(const int32 InValue) : InternalType(Type::Int32), Number(InValue) {};
+	FUncryptoolStructArgument(const uint32 InValue) : InternalType(Type::UInt32), Number(InValue) {};
+	FUncryptoolStructArgument(const int16 InValue) : InternalType(Type::Int16), Number(InValue) {};
+	FUncryptoolStructArgument(const uint16 InValue) : InternalType(Type::UInt16), Number(InValue) {};
+
+	~FUncryptoolStructArgument() = default;
+	FUncryptoolStructArgument(const FUncryptoolStructArgument& Other) = default;
+	FUncryptoolStructArgument& operator=(const FUncryptoolStructArgument& Other) = default;
+	FUncryptoolStructArgument(FUncryptoolStructArgument&& Other) = default;
+
+	explicit operator int32() const;
+	explicit operator int16() const;
+
+	explicit operator uint32() const;
+	explicit operator uint16() const;
+
+protected:
+	Type InternalType;
+
+	union
+	{
+		int64 Int64Value;
+		uint64 UInt64Value;
+		int32 Int32Value;
+		uint32 UInt32Value;
+		int16 Int16Value;
+		uint16 UInt16Value;
+		int8 Int8Value;
+		uint8 UInt8Value;
+		bool BoolValue;
+		float FloatValue;
+		double DoubleValue;
+	} Number;
+
+	TArray<uint8> RawData;
+
+public:
+	Type GetType() const { return InternalType; }
+
+	template<typename T>
+	friend T Uncryptool::StructNumericCast(const FUncryptoolStructArgument& StructArgument);
+};
+
+namespace Uncryptool
+{
 	/*
 	* Utils functions
 	*/
@@ -116,6 +184,9 @@ namespace Uncryptool
 
 	UNCRYPTOOL_API bool RandomBytes(const int32 NumBytes, TArray<uint8>& OutputBytes);
 	UNCRYPTOOL_API bool RandomBytesFill(TArray<uint8>& Bytes);
+
+	UNCRYPTOOL_API bool StructPack(const FStringView& Format, const TArray<FUncryptoolStructArgument>& Arguments, TArray<uint8>& OutputBytes, FString& ErrorMessage);
+	UNCRYPTOOL_API bool StructPack(const FString& Format, const TArray<FUncryptoolStructArgument>& Arguments, TArray<uint8>& OutputBytes, FString& ErrorMessage);
 
 	/*
 	* Hashing functions
@@ -138,19 +209,45 @@ namespace Uncryptool
 	UNCRYPTOOL_API bool DecryptChaCha20(const FUncryptoolBytes& EncryptedBytes, const FUncryptoolBytes& Key, const FUncryptoolBytes& Nonce, TArray<uint8>& OutputBytes, FString& ErrorMessage);
 	UNCRYPTOOL_API bool EncryptChaCha20(const FUncryptoolBytes& InputBytes, const FUncryptoolBytes& Key, const FUncryptoolBytes& Nonce, TArray<uint8>& EncryptedBytes, FString& ErrorMessage);
 
+	UNCRYPTOOL_API bool DecryptAES256CTR(const FUncryptoolBytes& EncryptedBytes, const FUncryptoolBytes& Key, const FUncryptoolBytes& Counter, TArray<uint8>& OutputBytes, FString& ErrorMessage);
+
+	UNCRYPTOOL_API bool DecryptAESZIP(const FUncryptoolBytes& EncryptedBytes, const uint8 EncryptionStrength, const FUncryptoolBytes& Password, TArray<uint8>& OutputBytes, FString& ErrorMessage);
+
+	UNCRYPTOOL_API bool HMAC(const EUncryptoolHash Hash, const FUncryptoolBytes& InputBytes, const FUncryptoolBytes& Key, TArray<uint8>& OutputBytes, FString& ErrorMessage);
+
 	/*
 	* Elliptic Curve Cryptography (ECC)
 	*/
 
 	UNCRYPTOOL_API bool GenerateECKey(const EUncryptoolEllipticCurve EllipticCurve, FUncryptoolPrivateKey& PrivateKey, FUncryptoolPublicKey& PublicKey, FString& ErrorMessage);
 	UNCRYPTOOL_API bool ECDSADigestSign(const FUncryptoolPrivateKey& PrivateKey, const FUncryptoolBytes& InputBytes, const EUncryptoolHash Hash, TArray<uint8>& OutputSignature, FString& ErrorMessage);
+	UNCRYPTOOL_API bool ECDSADigestVerify(const FUncryptoolPublicKey& PublicKey, const FUncryptoolBytes& InputBytes, const EUncryptoolHash Hash, const FUncryptoolBytes& SignatureBytes, FString& ErrorMessage);
 
 	/*
-	* Asymmetric keys
+	* RSA
+	*/
+
+	UNCRYPTOOL_API bool GenerateRSAKey(const int32 Bits, FUncryptoolPrivateKey& PrivateKey, FUncryptoolPublicKey& PublicKey, FString& ErrorMessage);
+	UNCRYPTOOL_API bool RSADigestSign(const FUncryptoolPrivateKey& PrivateKey, const FUncryptoolBytes& InputBytes, const EUncryptoolHash Hash, TArray<uint8>& OutputSignature, FString& ErrorMessage);
+	UNCRYPTOOL_API bool RSADigestVerify(const FUncryptoolPublicKey& PublicKey, const FUncryptoolBytes& InputBytes, const EUncryptoolHash Hash, const FUncryptoolBytes& SignatureBytes, FString& ErrorMessage);
+	UNCRYPTOOL_API bool RSAEncrypt(const FUncryptoolPublicKey& PublicKey, const FUncryptoolBytes& InputBytes, TArray<uint8>& OutputBytes, FString& ErrorMessage);
+	UNCRYPTOOL_API bool RSADecrypt(const FUncryptoolPrivateKey& PrivateKey, const FUncryptoolBytes& InputBytes, TArray<uint8>& OutputBytes, FString& ErrorMessage);
+
+	/*
+	* Keys management
 	*/
 
 	UNCRYPTOOL_API bool PEMToPrivateKey(const FUncryptoolBytes& PEMBytes, FUncryptoolPrivateKey& PrivateKey, FString& ErrorMessage);
 	UNCRYPTOOL_API bool PEMToPrivateKey(const FString& PEMString, FUncryptoolPrivateKey& PrivateKey, FString& ErrorMessage);
+
+	UNCRYPTOOL_API bool PublicKeyMatchesPrivateKey(const FUncryptoolPublicKey& PublicKey, const FUncryptoolPrivateKey& PrivateKey, FString& ErrorMessage);
+
+	/*
+	* PCSC functions
+	*/
+
+	UNCRYPTOOL_API bool PCSCGetReaders(TArray<FString>& Readers, FString& ErrorMessage);
+	UNCRYPTOOL_API bool PCSCGetPublicKey(const FString& Reader, const uint8 Slot, FUncryptoolPublicKey& PublicKey, FString& ErrorMessage);
 }
 
 
@@ -196,4 +293,10 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Uncryptool")
 	static TArray<uint8> RandomBytes(const int32 NumBytes);
+
+	UFUNCTION(BlueprintCallable, Category = "Uncryptool")
+	static TArray<uint8> DecryptAESZIP(const TArray<uint8>& Bytes, const uint8 EncryptionStrength, const TArray<uint8>& Password, bool& bSuccess, FString& ErrorMessage);
+
+	UFUNCTION(BlueprintCallable, Category = "Uncryptool")
+	static FUncryptoolPublicKey PCSCGetPublicKey(const FString& Reader, const uint8 Slot, bool& bSuccess, FString& ErrorMessage);
 };

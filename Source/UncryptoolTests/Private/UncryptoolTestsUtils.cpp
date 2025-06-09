@@ -60,4 +60,114 @@ bool FUncryptoolTestsBPUtils_BytesToUTF8String::RunTest(const FString& Parameter
 		"hello");
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FUncryptoolTestsUtils_StructPackInt32, "Uncryptool.UnitTests.Utils.StructPackInt32", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FUncryptoolTestsUtils_StructPackInt32::RunTest(const FString& Parameters)
+{
+	TArray<uint8> OutputBytes;
+	FString ErrorMessage;
+	bool bSuccess = Uncryptool::StructPack("<iii", { 1, 2, 3 }, OutputBytes, ErrorMessage);
+
+	TestTrue("bSuccess == true", bSuccess);
+	TestEqual("OutputBytes == { 1, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0 }", OutputBytes, { 1, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0 });
+
+	OutputBytes.Empty();
+	bSuccess = Uncryptool::StructPack(">iii", { 1, 2, 3 }, OutputBytes, ErrorMessage);
+
+	TestTrue("bSuccess == true", bSuccess);
+	TestEqual("OutputBytes == { 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 3 }", OutputBytes, { 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 3 });
+
+	OutputBytes.Empty();
+	bSuccess = Uncryptool::StructPack(">3i", { 1, 2, 3 }, OutputBytes, ErrorMessage);
+
+	TestTrue("bSuccess == true", bSuccess);
+	TestEqual("OutputBytes == { 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 3 }", OutputBytes, { 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 3 });
+
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FUncryptoolTestsUtils_StructPackPadding, "Uncryptool.UnitTests.Utils.StructPackPadding", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FUncryptoolTestsUtils_StructPackPadding::RunTest(const FString& Parameters)
+{
+	TArray<uint8> OutputBytes;
+	FString ErrorMessage;
+	bool bSuccess = Uncryptool::StructPack("xxx", { }, OutputBytes, ErrorMessage);
+
+	TestTrue("bSuccess == true", bSuccess);
+	TestEqual("OutputBytes == { 0, 0, 0 }", OutputBytes, { 0, 0, 0 });
+
+	OutputBytes.Empty();
+	bSuccess = Uncryptool::StructPack("5x", { 1, 2, 3 }, OutputBytes, ErrorMessage);
+
+	TestTrue("bSuccess == true", bSuccess);
+	TestEqual("OutputBytes == { 0, 0, 0, 0, 0 }", OutputBytes, { 0, 0, 0, 0, 0 });
+
+	OutputBytes.Empty();
+	bSuccess = Uncryptool::StructPack("5x", {}, OutputBytes, ErrorMessage);
+
+	TestTrue("bSuccess == true", bSuccess);
+	TestEqual("OutputBytes == { 0, 0, 0, 0, 0 }", OutputBytes, { 0, 0, 0, 0, 0 });
+
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FUncryptoolTestsUtils_StructPackInt16, "Uncryptool.UnitTests.Utils.StructPackInt16", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FUncryptoolTestsUtils_StructPackInt16::RunTest(const FString& Parameters)
+{
+	TArray<uint8> OutputBytes;
+	FString ErrorMessage;
+	bool bSuccess = Uncryptool::StructPack("<hhh", { 1, 2, 3 }, OutputBytes, ErrorMessage);
+
+	TestTrue("bSuccess == true", bSuccess);
+	TestEqual("OutputBytes == { 1, 0, 2, 0, 3, 0 }", OutputBytes, { 1, 0, 2, 0, 3, 0 });
+
+	OutputBytes.Empty();
+	bSuccess = Uncryptool::StructPack(">hhh", { 1, 2, 3 }, OutputBytes, ErrorMessage);
+
+	TestTrue("bSuccess == true", bSuccess);
+	TestEqual("OutputBytes == { 0, 1, 0, 2, 0, 3 }", OutputBytes, { 0, 1, 0, 2, 0, 3 });
+
+	OutputBytes.Empty();
+	bSuccess = Uncryptool::StructPack(">2h", { 1, 2 }, OutputBytes, ErrorMessage);
+
+	TestTrue("bSuccess == true", bSuccess);
+	TestEqual("OutputBytes == { 0, 1, 0, 2 }", OutputBytes, { 0, 1, 0, 2 });
+
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FUncryptoolTestsUtils_StructPackUInt16, "Uncryptool.UnitTests.Utils.StructPackUInt16", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FUncryptoolTestsUtils_StructPackUInt16::RunTest(const FString& Parameters)
+{
+	TArray<uint8> OutputBytes;
+	FString ErrorMessage;
+	bool bSuccess = Uncryptool::StructPack("<HHH", { 1, 2, 3 }, OutputBytes, ErrorMessage);
+
+	TestTrue("bSuccess == true", bSuccess);
+	TestEqual("OutputBytes == { 1, 0, 2, 0, 3, 0 }", OutputBytes, { 1, 0, 2, 0, 3, 0 });
+
+	OutputBytes.Empty();
+	bSuccess = Uncryptool::StructPack(">HHH", { 1, 2, 3 }, OutputBytes, ErrorMessage);
+
+	TestTrue("bSuccess == true", bSuccess);
+	TestEqual("OutputBytes == { 0, 1, 0, 2, 0, 3 }", OutputBytes, { 0, 1, 0, 2, 0, 3 });
+
+	OutputBytes.Empty();
+	bSuccess = Uncryptool::StructPack(">2H", { 1, 2 }, OutputBytes, ErrorMessage);
+
+	TestTrue("bSuccess == true", bSuccess);
+	TestEqual("OutputBytes == { 0, 1, 0, 2 }", OutputBytes, { 0, 1, 0, 2 });
+
+	OutputBytes.Empty();
+	bSuccess = Uncryptool::StructPack(">2H", { -1, -2 }, OutputBytes, ErrorMessage);
+
+	TestTrue("bSuccess == true", bSuccess);
+	TestEqual("OutputBytes == { 0xff, 0xff, 0xff, 0xfe }", OutputBytes, { 0xff, 0xff, 0xff, 0xfe });
+
+	return true;
+}
+
 #endif

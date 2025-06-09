@@ -70,3 +70,10 @@ TArray<uint8> UUncryptoolFunctionLibrary::RandomBytes(const int32 NumBytes)
 
 	return Output;
 }
+
+TArray<uint8> UUncryptoolFunctionLibrary::DecryptAESZIP(const TArray<uint8>& Bytes, const uint8 EncryptionStrength, const TArray<uint8>& Password, bool& bSuccess, FString& ErrorMessage)
+{
+	TArray<uint8> OutputBytes;
+	bSuccess = Uncryptool::DecryptAESZIP(Bytes, EncryptionStrength, Password, OutputBytes, ErrorMessage);
+	return OutputBytes;
+}
