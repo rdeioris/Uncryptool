@@ -36,7 +36,9 @@ enum class EUncryptoolKey : uint8
 	RSA,
 	DSA,
 	EC,
-	ED,
+	ED25519,
+	ED448,
+	DH,
 	Unknown = 0xff
 };
 
@@ -239,8 +241,14 @@ namespace Uncryptool
 
 	UNCRYPTOOL_API bool PEMToPrivateKey(const FUncryptoolBytes& PEMBytes, FUncryptoolPrivateKey& PrivateKey, FString& ErrorMessage);
 	UNCRYPTOOL_API bool PEMToPrivateKey(const FString& PEMString, FUncryptoolPrivateKey& PrivateKey, FString& ErrorMessage);
+	UNCRYPTOOL_API bool PEMToPublicKey(const FUncryptoolBytes& PEMBytes, FUncryptoolPublicKey& PublicKey, FString& ErrorMessage);
+	UNCRYPTOOL_API bool PEMToPublicKey(const FString& PEMString, FUncryptoolPublicKey& PublicKey, FString& ErrorMessage);
+	UNCRYPTOOL_API bool PublicKeyToPEM(const FUncryptoolPublicKey& PublicKey, TArray<uint8>& PEMBytes, FString& ErrorMessage);
+	UNCRYPTOOL_API bool PublicKeyToPEM(const FUncryptoolPublicKey& PublicKey, FString& PEMString, FString& ErrorMessage);
+
 
 	UNCRYPTOOL_API bool PublicKeyMatchesPrivateKey(const FUncryptoolPublicKey& PublicKey, const FUncryptoolPrivateKey& PrivateKey, FString& ErrorMessage);
+	UNCRYPTOOL_API bool PublicKeyFromPrivateKey(const FUncryptoolPrivateKey& PrivateKey, FUncryptoolPublicKey& PublicKey, FString& ErrorMessage);
 
 	/*
 	* PCSC functions

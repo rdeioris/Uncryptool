@@ -191,4 +191,85 @@ okBafPis3+BtIEk9tNpn+gQeAhx9zMnXwMju3Fby1kHAFkw7HmS+l4j90u6MR9eC
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FUncryptoolTestsPEM_ED448, "Uncryptool.UnitTests.PEM.ED448", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FUncryptoolTestsPEM_ED448::RunTest(const FString& Parameters)
+{
+	FUncryptoolPrivateKey PrivateKey;
+	FString ErrorMessage;
+
+	const FString ED448 = R"(
+-----BEGIN PRIVATE KEY-----
+MEcCAQAwBQYDK2VxBDsEOYUbIWDj68xO9mDHfwC48koDkKcetO/U21eiBbEJD6+k
+UNnjcrVG2xbzdj5O03iQXqMRDIqifI9ksg==
+-----END PRIVATE KEY-----
+	)";
+
+	bool bSuccess = Uncryptool::PEMToPrivateKey(ED448, PrivateKey, ErrorMessage);
+	TestTrue("bSuccess == true", bSuccess);
+	TestEqual("PrivateKey.Type == ED448", PrivateKey.Type, EUncryptoolKey::ED448);
+	TestEqual("PrivateKey.Bits == 456", PrivateKey.Bits, 456);
+
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FUncryptoolTestsPEM_ED25519, "Uncryptool.UnitTests.PEM.ED25519", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FUncryptoolTestsPEM_ED25519::RunTest(const FString& Parameters)
+{
+	FUncryptoolPrivateKey PrivateKey;
+	FString ErrorMessage;
+
+	const FString ED25519 = R"(
+-----BEGIN PRIVATE KEY-----
+MC4CAQAwBQYDK2VwBCIEIHHWB3i/6MKozd33Aq0FwyWZEyjn6MeOafOIrC9IZYgv
+-----END PRIVATE KEY-----
+	)";
+
+	bool bSuccess = Uncryptool::PEMToPrivateKey(ED25519, PrivateKey, ErrorMessage);
+	TestTrue("bSuccess == true", bSuccess);
+	TestEqual("PrivateKey.Type == ED25519", PrivateKey.Type, EUncryptoolKey::ED25519);
+	TestEqual("PrivateKey.Bits == 253", PrivateKey.Bits, 253);
+
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FUncryptoolTestsPEM_ED25519ToPublicKey, "Uncryptool.UnitTests.PEM.ED25519ToPublicKey", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FUncryptoolTestsPEM_ED25519ToPublicKey::RunTest(const FString& Parameters)
+{
+	FUncryptoolPrivateKey PrivateKey;
+	FString ErrorMessage;
+
+	const FString ED25519 = R"(
+-----BEGIN PRIVATE KEY-----
+MC4CAQAwBQYDK2VwBCIEIHHWB3i/6MKozd33Aq0FwyWZEyjn6MeOafOIrC9IZYgv
+-----END PRIVATE KEY-----
+	)";
+
+	const FString ED25519Pub = R"(
+-----BEGIN PUBLIC KEY-----
+MCowBQYDK2VwAyEA7TT3AmCfoUcwEuWH+kVtnx195rVGHJNV7lwtSPdu8lk=
+-----END PUBLIC KEY-----
+	)";
+
+	bool bSuccess = Uncryptool::PEMToPrivateKey(ED25519, PrivateKey, ErrorMessage);
+	TestTrue("bSuccess == true", bSuccess);
+	TestEqual("PrivateKey.Type == ED25519", PrivateKey.Type, EUncryptoolKey::ED25519);
+	TestEqual("PrivateKey.Bits == 253", PrivateKey.Bits, 253);
+
+	FUncryptoolPublicKey PublicKey;
+	bSuccess = Uncryptool::PublicKeyFromPrivateKey(PrivateKey, PublicKey, ErrorMessage);
+	TestTrue("bSuccess == true", bSuccess);
+	TestEqual("PublicKey.Type == ED25519", PrivateKey.Type, EUncryptoolKey::ED25519);
+	TestEqual("PublicKey.Bits == 253", PrivateKey.Bits, 253);
+
+	FString ED25519PubPEM;
+	bSuccess = Uncryptool::PublicKeyToPEM(PublicKey, ED25519PubPEM, ErrorMessage);
+	TestTrue("bSuccess == true", bSuccess);
+	TestEqual("ED25519Pub == ED25519PubPEM", ED25519Pub.TrimStart().TrimEnd(), ED25519PubPEM.TrimStart().TrimEnd());
+
+	return true;
+}
+
 #endif
