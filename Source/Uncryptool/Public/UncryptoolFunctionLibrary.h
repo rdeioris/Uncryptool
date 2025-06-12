@@ -255,7 +255,7 @@ namespace Uncryptool
 	*/
 
 	UNCRYPTOOL_API bool PCSCGetReaders(TArray<FString>& Readers, FString& ErrorMessage);
-	UNCRYPTOOL_API bool PCSCGetPublicKey(const FString& Reader, const uint8 Slot, FUncryptoolPublicKey& PublicKey, FString& ErrorMessage);
+	UNCRYPTOOL_API bool PCSCGetPublicKey(const FString& Reader, const uint8 Slot, const FString& Pin, FUncryptoolPublicKey& PublicKey, FString& ErrorMessage);
 }
 
 
@@ -306,5 +306,8 @@ public:
 	static TArray<uint8> DecryptAESZIP(const TArray<uint8>& Bytes, const uint8 EncryptionStrength, const TArray<uint8>& Password, bool& bSuccess, FString& ErrorMessage);
 
 	UFUNCTION(BlueprintCallable, Category = "Uncryptool")
-	static FUncryptoolPublicKey PCSCGetPublicKey(const FString& Reader, const uint8 Slot, bool& bSuccess, FString& ErrorMessage);
+	static FUncryptoolPublicKey PCSCGetPublicKey(const FString& Reader, const uint8 Slot, const FString& Pin, bool& bSuccess, FString& ErrorMessage);
+
+	UFUNCTION(BlueprintCallable, Category = "Uncryptool")
+	static TArray<FString> PCSCGetReaders(FString& ErrorMessage);
 };

@@ -158,7 +158,7 @@ namespace Uncryptool
 #endif
 	}
 
-	bool PCSCGetPublicKey(const FString& Reader, const uint8 Slot, FUncryptoolPublicKey& PublicKey, FString& ErrorMessage)
+	bool PCSCGetPublicKey(const FString& Reader, const uint8 Slot, const FString& Pin, FUncryptoolPublicKey& PublicKey, FString& ErrorMessage)
 	{
 #if PLATFORM_WINDOWS
 		SCARDCONTEXT CardContext;
@@ -217,9 +217,19 @@ namespace Uncryptool
 	}
 }
 
-FUncryptoolPublicKey UUncryptoolFunctionLibrary::PCSCGetPublicKey(const FString& Reader, const uint8 Slot, bool& bSuccess, FString& ErrorMessage)
+FUncryptoolPublicKey UUncryptoolFunctionLibrary::PCSCGetPublicKey(const FString& Reader, const uint8 Slot, const FString& Pin, bool& bSuccess, FString& ErrorMessage)
 {
 	FUncryptoolPublicKey PublicKey;
-	bSuccess = Uncryptool::PCSCGetPublicKey(Reader, Slot, PublicKey, ErrorMessage);
+	bSuccess = Uncryptool::PCSCGetPublicKey(Reader, Slot, Pin, PublicKey, ErrorMessage);
 	return PublicKey;
+}
+
+TArray<FString> UUncryptoolFunctionLibrary::PCSCGetReaders(FString& ErrorMessage)
+{
+	TArray<FString> Readers;
+	if (!Uncryptool::PCSCGetReaders(Readers, ErrorMessage))
+	{
+		return {};
+	}
+	return Readers;
 }
