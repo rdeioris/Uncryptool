@@ -259,4 +259,15 @@ namespace Uncryptool
 	{
 		return StructPack(FStringView(Format), Arguments, OutputBytes, ErrorMessage);
 	}
+
+	bool BitFromBytes(const FUncryptoolBytes& InputBytes, const int32 Offset, uint8& BitValue)
+	{
+		const int32 ByteIndex = Offset / 8;
+		const int32 BitIndex = Offset % 8;
+		if (Offset >= InputBytes.Num())
+		{
+			return false;
+		}
+		return (InputBytes.GetData()[ByteIndex] >> (7 - BitIndex)) & 0x01;
+	}
 }

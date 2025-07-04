@@ -192,6 +192,8 @@ namespace Uncryptool
 	UNCRYPTOOL_API bool StructPack(const FStringView& Format, const TArray<FUncryptoolStructArgument>& Arguments, TArray<uint8>& OutputBytes, FString& ErrorMessage);
 	UNCRYPTOOL_API bool StructPack(const FString& Format, const TArray<FUncryptoolStructArgument>& Arguments, TArray<uint8>& OutputBytes, FString& ErrorMessage);
 
+	UNCRYPTOOL_API bool BitFromBytes(const FUncryptoolBytes& InputBytes, const int32 Offset, uint8& BitValue);
+
 	/*
 	* Hashing functions
 	*/
