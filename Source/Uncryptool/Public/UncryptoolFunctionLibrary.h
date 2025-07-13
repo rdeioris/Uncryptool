@@ -251,6 +251,7 @@ namespace Uncryptool
 	* Key Derivation functions
 	*/
 	bool PBEScrypt(const FUncryptoolBytes& Password, const FUncryptoolBytes& Salt, const uint64 N, const uint64 R, const uint64 P, const int32 KeyLen, TArray<uint8>& OutputBytes, FString& ErrorMessage);
+	bool HKDF(const EUncryptoolHash Hash, const FUncryptoolBytes& Salt, const FUncryptoolBytes& IKM, const FUncryptoolBytes& Info, TArray<uint8>& OutputBytes, FString& ErrorMessage);
 	
 
 	/*
@@ -298,6 +299,8 @@ namespace Uncryptool
 	UNCRYPTOOL_API bool PEMToPublicKey(const FString& PEMString, FUncryptoolPublicKey& PublicKey, FString& ErrorMessage);
 	UNCRYPTOOL_API bool PublicKeyToPEM(const FUncryptoolPublicKey& PublicKey, TArray<uint8>& PEMBytes, FString& ErrorMessage);
 	UNCRYPTOOL_API bool PublicKeyToPEM(const FUncryptoolPublicKey& PublicKey, FString& PEMString, FString& ErrorMessage);
+	UNCRYPTOOL_API bool PrivateKeyToRaw(const FUncryptoolPrivateKey& PublicKey, TArray<uint8>& OutputBytes, FString& ErrorMessage);
+	UNCRYPTOOL_API bool PublicKeyToRaw(const FUncryptoolPublicKey& PublicKey, TArray<uint8>& OutputBytes, FString& ErrorMessage);
 
 
 	UNCRYPTOOL_API bool PublicKeyMatchesPrivateKey(const FUncryptoolPublicKey& PublicKey, const FUncryptoolPrivateKey& PrivateKey, FString& ErrorMessage);
