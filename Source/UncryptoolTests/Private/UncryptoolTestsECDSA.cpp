@@ -36,6 +36,12 @@ bool FUncryptoolTestsECDSA_GenerateKey::RunTest(const FString& Parameters)
 	TestEqual("PublicKey.Bits == 521", PublicKey.Bits, 521);
 	TestTrue("PublicKeyMatchesPrivateKey == true", Uncryptool::PublicKeyMatchesPrivateKey(PublicKey, PrivateKey, ErrorMessage));
 
+	bSuccess = Uncryptool::GenerateECKey(EUncryptoolEllipticCurve::X25519, PrivateKey, PublicKey, ErrorMessage);
+	TestTrue("bSuccess == true", bSuccess);
+	TestEqual("PrivateKey.Bits == 253", PrivateKey.Bits, 253);
+	TestEqual("PublicKey.Bits == 253", PublicKey.Bits, 253);
+	TestTrue("PublicKeyMatchesPrivateKey == true", Uncryptool::PublicKeyMatchesPrivateKey(PublicKey, PrivateKey, ErrorMessage));
+
 	return true;
 }
 

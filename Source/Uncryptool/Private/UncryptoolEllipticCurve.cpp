@@ -31,62 +31,59 @@ namespace Uncryptool
 		case EUncryptoolEllipticCurve::SECP521R1:
 			Nid = NID_secp521r1;
 			break;
+		case EUncryptoolEllipticCurve::X25519:
+			Nid = NID_X25519;
+			break;
 		default:
 			ErrorMessage = "Unknown Elliptic Curve";
 			return false;
 		}
 
-		EC_KEY* ECKey = EC_KEY_new_by_curve_name(Nid);
-		if (!ECKey)
+		EVP_PKEY_CTX* Context = EVP_PKEY_CTX_new_id(Nid == NID_X25519 ? EVP_PKEY_X25519 : EVP_PKEY_EC, nullptr);
+		if (!Context)
 		{
 			ErrorMessage = GetOpenSSLError();
 			return false;
 		}
 
-		if (EC_KEY_generate_key(ECKey) <= 0)
+		if (EVP_PKEY_keygen_init(Context) <= 0)
 		{
 			ErrorMessage = GetOpenSSLError();
-			EC_KEY_free(ECKey);
+			EVP_PKEY_CTX_free(Context);
 			return false;
 		}
+
+		if (Nid != NID_X25519)
+		{
+			if (EVP_PKEY_CTX_set_ec_paramgen_curve_nid(Context, Nid) <= 0)
+			{
+				ErrorMessage = GetOpenSSLError();
+				EVP_PKEY_CTX_free(Context);
+				return false;
+			}
+		}
+
+		EVP_PKEY* EVPKey = nullptr;
+		if (EVP_PKEY_keygen(Context, &EVPKey) <= 0)
+		{
+			ErrorMessage = GetOpenSSLError();
+			EVP_PKEY_CTX_free(Context);
+			return false;
+		}
+
+		EVP_PKEY_CTX_free(Context);
 
 		PrivateKey.Type = EUncryptoolKey::EC;
 		PublicKey.Type = EUncryptoolKey::EC;
 
-		const EC_GROUP* ECGroup = EC_KEY_get0_group(ECKey);
-		if (!ECGroup)
-		{
-			ErrorMessage = GetOpenSSLError();
-			EC_KEY_free(ECKey);
-			return false;
-		}
-
-		BIGNUM* CurveOrderBigNum = BN_new();
-		if (!CurveOrderBigNum)
-		{
-			ErrorMessage = GetOpenSSLError();
-			EC_KEY_free(ECKey);
-			return false;
-		}
-
-		if (!EC_GROUP_get_order(ECGroup, CurveOrderBigNum, nullptr))
-		{
-			ErrorMessage = GetOpenSSLError();
-			BN_free(CurveOrderBigNum);
-			EC_KEY_free(ECKey);
-			return 0;
-		}
-
-		PrivateKey.Bits = BN_num_bits(CurveOrderBigNum);
+		PrivateKey.Bits = EVP_PKEY_bits(EVPKey);
 		PublicKey.Bits = PrivateKey.Bits;
 
-		BN_free(CurveOrderBigNum);
-
-		int32 DerLen = i2d_ECPrivateKey(ECKey, nullptr);
+		int32 DerLen = i2d_PrivateKey(EVPKey, nullptr);
 		if (DerLen <= 0)
 		{
 			ErrorMessage = GetOpenSSLError();
-			EC_KEY_free(ECKey);
+			EVP_PKEY_free(EVPKey);
 			return false;
 		}
 
@@ -94,50 +91,34 @@ namespace Uncryptool
 
 		uint8* DERPtr = PrivateKey.DER.GetData();
 
-		DerLen = i2d_ECPrivateKey(ECKey, &DERPtr);
+		DerLen = i2d_PrivateKey(EVPKey, &DERPtr);
 		if (DerLen <= 0)
 		{
 			ErrorMessage = GetOpenSSLError();
-			EC_KEY_free(ECKey);
+			EVP_PKEY_free(EVPKey);
 			return false;
 		}
 
-		EVP_PKEY* EVPPrivateKey = EVP_PKEY_new();
-		if (!EVPPrivateKey)
-		{
-			ErrorMessage = GetOpenSSLError();
-			EC_KEY_free(ECKey);
-			return false;
-		}
-
-		// this transfers ownership of ECKey!
-		if (EVP_PKEY_assign_EC_KEY(EVPPrivateKey, ECKey) <= 0)
-		{
-			ErrorMessage = GetOpenSSLError();
-			EC_KEY_free(ECKey);
-			return false;
-		}
-
-		DerLen = i2d_PUBKEY(EVPPrivateKey, nullptr);
+		DerLen = i2d_PUBKEY(EVPKey, nullptr);
 		if (DerLen <= 0)
 		{
 			ErrorMessage = GetOpenSSLError();
-			EVP_PKEY_free(EVPPrivateKey);
+			EVP_PKEY_free(EVPKey);
 			return false;
 		}
 
 		PublicKey.DER.SetNum(DerLen, EAllowShrinking::No);
 
 		DERPtr = PublicKey.DER.GetData();
-		DerLen = i2d_PUBKEY(EVPPrivateKey, &DERPtr);
+		DerLen = i2d_PUBKEY(EVPKey, &DERPtr);
 		if (DerLen <= 0)
 		{
 			ErrorMessage = GetOpenSSLError();
-			EVP_PKEY_free(EVPPrivateKey);
+			EVP_PKEY_free(EVPKey);
 			return false;
 		}
 
-		EVP_PKEY_free(EVPPrivateKey);
+		EVP_PKEY_free(EVPKey);
 
 		return true;
 	}
@@ -314,6 +295,83 @@ namespace Uncryptool
 		EVP_MD_CTX_free(Context);
 		EVP_PKEY_free(EVPPublicKey);
 
+		return true;
+	}
+
+	bool ECDH(const FUncryptoolPrivateKey& PrivateKey, const FUncryptoolPublicKey& PublicKey, TArray<uint8>& OutputSharedSecret, FString& ErrorMessage)
+	{
+		const uint8* DERPtr = PublicKey.DER.GetData();
+
+		EVP_PKEY* EVPPublicKey = d2i_PUBKEY(nullptr, &DERPtr, PublicKey.DER.Num());
+		if (!EVPPublicKey)
+		{
+			ErrorMessage = GetOpenSSLError();
+			return false;
+		}
+
+		const int32 CurveType = EVP_PKEY_base_id(EVPPublicKey);
+
+		DERPtr = PrivateKey.DER.GetData();
+
+		EVP_PKEY* EVPPrivateKey = d2i_PrivateKey(CurveType, nullptr, &DERPtr, PrivateKey.DER.Num());
+		if (!EVPPrivateKey)
+		{
+			ErrorMessage = GetOpenSSLError();
+			EVP_PKEY_free(EVPPublicKey);
+			return false;
+		}
+
+		EVP_PKEY_CTX* Context = EVP_PKEY_CTX_new(EVPPrivateKey, nullptr);
+		if (!Context)
+		{
+			ErrorMessage = GetOpenSSLError();
+			EVP_PKEY_free(EVPPublicKey);
+			EVP_PKEY_free(EVPPrivateKey);
+			return false;
+		}
+
+		if (EVP_PKEY_derive_init(Context) <= 0)
+		{
+			ErrorMessage = GetOpenSSLError();
+			EVP_PKEY_CTX_free(Context);
+			EVP_PKEY_free(EVPPublicKey);
+			EVP_PKEY_free(EVPPrivateKey);
+			return false;
+		}
+
+		if (EVP_PKEY_derive_set_peer(Context, EVPPublicKey) <= 0)
+		{
+			ErrorMessage = GetOpenSSLError();
+			EVP_PKEY_CTX_free(Context);
+			EVP_PKEY_free(EVPPublicKey);
+			EVP_PKEY_free(EVPPrivateKey);
+			return false;
+		}
+
+		SIZE_T KeyLen = 0;
+		if (EVP_PKEY_derive(Context, nullptr, &KeyLen) <= 0)
+		{
+			ErrorMessage = GetOpenSSLError();
+			EVP_PKEY_CTX_free(Context);
+			EVP_PKEY_free(EVPPublicKey);
+			EVP_PKEY_free(EVPPrivateKey);
+			return false;
+		}
+
+		OutputSharedSecret.SetNum(KeyLen, EAllowShrinking::No);
+
+		if (EVP_PKEY_derive(Context, OutputSharedSecret.GetData(), &KeyLen) <= 0)
+		{
+			ErrorMessage = GetOpenSSLError();
+			EVP_PKEY_CTX_free(Context);
+			EVP_PKEY_free(EVPPublicKey);
+			EVP_PKEY_free(EVPPrivateKey);
+			return false;
+		}
+
+		EVP_PKEY_CTX_free(Context);
+		EVP_PKEY_free(EVPPublicKey);
+		EVP_PKEY_free(EVPPrivateKey);
 		return true;
 	}
 }

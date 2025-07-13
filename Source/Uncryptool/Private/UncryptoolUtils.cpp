@@ -82,6 +82,64 @@ namespace Uncryptool
 		return Output;
 	}
 
+	bool HexStringToBytes(const FStringView& String, TArray<uint8>& OutputBytes)
+	{
+		FString CleanHexString(String);
+
+		CleanHexString = CleanHexString.ToLower().Replace(TEXT("0x"), TEXT(""));
+
+		uint8 CurrentValue = 0;
+		bool bFirst = true;
+		for (TCHAR Char : CleanHexString)
+		{
+			if (FChar::IsWhitespace(Char))
+			{
+				continue;
+			}
+
+			if (Char >= '0' && Char <= '9')
+			{
+				if (bFirst)
+				{
+					CurrentValue = (Char - '0') << 4;
+				}
+				else
+				{
+					CurrentValue |= (Char - '0') & 0x0f;
+				}
+			}
+			else if (Char >= 'a' && Char <= 'f')
+			{
+				if (bFirst)
+				{
+					CurrentValue = (10 + (Char - 'a')) << 4;
+				}
+				else
+				{
+					CurrentValue |= (10 + (Char - 'a')) & 0x0f;
+				}
+			}
+			else
+			{
+				return false;
+			}
+
+			if (!bFirst)
+			{
+				OutputBytes.Add(CurrentValue);
+			}
+
+			bFirst = !bFirst;
+		}
+
+		return true;
+	}
+
+	bool HexStringToBytes(const char* UTF8String, TArray<uint8>& OutputBytes)
+	{
+		return HexStringToBytes(FString(UTF8String), OutputBytes);
+	}
+
 	FString BytesToUTF8String(const FUncryptoolBytes& Bytes)
 	{
 		FUTF8ToTCHAR Converter = FUTF8ToTCHAR(reinterpret_cast<const char*>(Bytes.GetData()), Bytes.Num());

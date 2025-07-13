@@ -27,6 +27,7 @@ enum class EUncryptoolEllipticCurve : uint8
 	SECP256K1,
 	SECP384R1,
 	SECP521R1,
+	X25519,
 	Unknown = 0xff
 };
 
@@ -39,6 +40,25 @@ enum class EUncryptoolKey : uint8
 	ED25519,
 	ED448,
 	DH,
+	Unknown = 0xff
+};
+
+UENUM()
+enum class EUncryptoolKeyDerivation : uint8
+{
+	PBKDF2,
+	Scrypt,
+	HKDF,
+	Legacy,
+	Unknown = 0xff
+};
+
+UENUM()
+enum class EUncryptoolCipher : uint8
+{
+	AES256CBC,
+	Camelia256CBC,
+	ChaCha20,
 	Unknown = 0xff
 };
 
@@ -97,9 +117,19 @@ struct FUncryptoolBytes
 	{
 	}
 
+	FUncryptoolBytes(const uint8* InPtr, const int32 InSize) : Ptr(InPtr), Size(InSize)
+	{
+	}
+
 	template<typename T>
 	FUncryptoolBytes(const T& Container) : Ptr(Container.GetData()), Size(Container.Num())
 	{
+	}
+
+	template<typename T>
+	const T* GetData() const
+	{
+		return reinterpret_cast<const T*>(Ptr);
 	}
 
 	const uint8* GetData() const
@@ -183,6 +213,8 @@ namespace Uncryptool
 	UNCRYPTOOL_API TArray<uint8> UTF8StringToBytes(const FStringView& String);
 	UNCRYPTOOL_API FString BytesToUTF8String(const FUncryptoolBytes& Bytes);
 	UNCRYPTOOL_API FString BytesToHexString(const FUncryptoolBytes& Bytes);
+	UNCRYPTOOL_API bool HexStringToBytes(const FStringView& String, TArray<uint8>& OutputBytes);
+	UNCRYPTOOL_API bool HexStringToBytes(const char* UTF8String, TArray<uint8>& OutputBytes);
 
 	UNCRYPTOOL_API FString GetOpenSSLError();
 
@@ -214,6 +246,13 @@ namespace Uncryptool
 
 	UNCRYPTOOL_API bool HMAC(const FUncryptoolBytes& Bytes, const FUncryptoolBytes& Secret, const EUncryptoolHash Hash, TArray<uint8>& OutputBytes, FString& ErrorMessage);
 
+
+	/*
+	* Key Derivation functions
+	*/
+	bool PBEScrypt(const FUncryptoolBytes& Password, const FUncryptoolBytes& Salt, const uint64 N, const uint64 R, const uint64 P, const int32 KeyLen, TArray<uint8>& OutputBytes, FString& ErrorMessage);
+	
+
 	/*
 	* Symmetric Encryption functions
 	*/
@@ -221,6 +260,7 @@ namespace Uncryptool
 	UNCRYPTOOL_API bool DecryptAES256CBC(const FUncryptoolBytes& EncryptedBytes, const FUncryptoolBytes& Key, const FUncryptoolBytes& Iv, TArray<uint8>& OutputBytes, FString& ErrorMessage);
 	UNCRYPTOOL_API bool EncryptAES256CBC(const FUncryptoolBytes& InputBytes, const FUncryptoolBytes& Key, const FUncryptoolBytes& Iv, TArray<uint8>& EncryptedBytes, FString& ErrorMessage);
 	UNCRYPTOOL_API bool DecryptChaCha20(const FUncryptoolBytes& EncryptedBytes, const FUncryptoolBytes& Key, const FUncryptoolBytes& Nonce, TArray<uint8>& OutputBytes, FString& ErrorMessage);
+	UNCRYPTOOL_API bool DecryptChaCha20Salted(const FUncryptoolBytes& EncryptedBytes, const FUncryptoolBytes& Password, const EUncryptoolKeyDerivation KeyDerivation, const int32 Iterations, TArray<uint8>& OutputBytes, FString& ErrorMessage);
 	UNCRYPTOOL_API bool EncryptChaCha20(const FUncryptoolBytes& InputBytes, const FUncryptoolBytes& Key, const FUncryptoolBytes& Nonce, TArray<uint8>& EncryptedBytes, FString& ErrorMessage);
 
 	UNCRYPTOOL_API bool DecryptAES256CTR(const FUncryptoolBytes& EncryptedBytes, const FUncryptoolBytes& Key, const FUncryptoolBytes& Counter, TArray<uint8>& OutputBytes, FString& ErrorMessage);
@@ -236,6 +276,7 @@ namespace Uncryptool
 	UNCRYPTOOL_API bool GenerateECKey(const EUncryptoolEllipticCurve EllipticCurve, FUncryptoolPrivateKey& PrivateKey, FUncryptoolPublicKey& PublicKey, FString& ErrorMessage);
 	UNCRYPTOOL_API bool ECDSADigestSign(const FUncryptoolPrivateKey& PrivateKey, const FUncryptoolBytes& InputBytes, const EUncryptoolHash Hash, TArray<uint8>& OutputSignature, FString& ErrorMessage);
 	UNCRYPTOOL_API bool ECDSADigestVerify(const FUncryptoolPublicKey& PublicKey, const FUncryptoolBytes& InputBytes, const EUncryptoolHash Hash, const FUncryptoolBytes& SignatureBytes, FString& ErrorMessage);
+	UNCRYPTOOL_API bool ECDH(const FUncryptoolPrivateKey& PrivateKey, const FUncryptoolPublicKey& PublicKey, TArray<uint8>& OutputSharedSecret, FString& ErrorMessage);
 
 	/*
 	* RSA
@@ -313,6 +354,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Uncryptool")
 	static TArray<uint8> DecryptChaCha20(const TArray<uint8>& Bytes, const TArray<uint8>& Key, const TArray<uint8>& Nonce, bool& bSuccess, FString& ErrorMessage);
+
+	UFUNCTION(BlueprintCallable, Category = "Uncryptool")
+	static TArray<uint8> DecryptChaCha20Salted(const TArray<uint8>& Bytes, const FString& Password, const EUncryptoolKeyDerivation KeyDerivation, const int32 Iterations, bool& bSuccess, FString& ErrorMessage);
 
 	UFUNCTION(BlueprintCallable, Category = "Uncryptool")
 	static TArray<uint8> EncryptChaCha20(const TArray<uint8>& Bytes, const TArray<uint8>& Key, const TArray<uint8>& Nonce, bool& bSuccess, FString& ErrorMessage);

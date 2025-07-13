@@ -53,6 +53,13 @@ TArray<uint8> UUncryptoolFunctionLibrary::DecryptChaCha20(const TArray<uint8>& B
 	return OutputBytes;
 }
 
+TArray<uint8> UUncryptoolFunctionLibrary::DecryptChaCha20Salted(const TArray<uint8>& Bytes, const FString& Password, const EUncryptoolKeyDerivation KeyDerivation, const int32 Iterations, bool& bSuccess, FString& ErrorMessage)
+{
+	TArray<uint8> OutputBytes;
+	bSuccess = Uncryptool::DecryptChaCha20Salted(Bytes, UTF8StringToBytes(Password), KeyDerivation, Iterations, OutputBytes, ErrorMessage);
+	return OutputBytes;
+}
+
 TArray<uint8> UUncryptoolFunctionLibrary::EncryptChaCha20(const TArray<uint8>& Bytes, const TArray<uint8>& Key, const TArray<uint8>& Nonce, bool& bSuccess, FString& ErrorMessage)
 {
 	TArray<uint8> OutputBytes;

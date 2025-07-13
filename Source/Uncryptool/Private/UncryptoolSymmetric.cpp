@@ -185,6 +185,41 @@ namespace Uncryptool
 		return true;
 	}
 
+	bool DecryptChaCha20Salted(const FUncryptoolBytes& EncryptedBytes, const FUncryptoolBytes& Password, const EUncryptoolKeyDerivation KeyDerivation, const int32 Iterations, TArray<uint8>& OutputBytes, FString& ErrorMessage)
+	{
+		if (EncryptedBytes.Num() < 16 || FMemory::Memcmp(EncryptedBytes.GetData(), "Salted__", 8))
+		{
+			ErrorMessage = "Salted__ prefix not found";
+			return false;
+		}
+
+		TArray<uint8> KeyAndIV;
+
+		if (KeyDerivation == EUncryptoolKeyDerivation::PBKDF2)
+		{
+			if (!PBKDF2HMAC(Password, FUncryptoolBytes(EncryptedBytes.GetData() + 8, 8), Iterations, EUncryptoolHash::SHA256, 32 + 16 /* KeySize + IVSize */, KeyAndIV, ErrorMessage))
+			{
+				return false;
+			}
+		}
+		else if (KeyDerivation == EUncryptoolKeyDerivation::Legacy)
+		{
+			KeyAndIV.SetNum(32 + 16, EAllowShrinking::No);
+			if (EVP_BytesToKey(EVP_aes_256_cbc(), EVP_sha256(), EncryptedBytes.GetData() + 8, Password.GetData(), Password.Num(), Iterations, KeyAndIV.GetData(), KeyAndIV.GetData() + 32) <= 0)
+			{
+				ErrorMessage = GetOpenSSLError();
+				return false;
+			}
+		}
+		else
+		{
+			ErrorMessage = "Unsupported Key Derivation Function";
+			return false;
+		}
+
+		return DecryptChaCha20(FUncryptoolBytes(EncryptedBytes.GetData() + 16, EncryptedBytes.Num() - 16), FUncryptoolBytes(KeyAndIV.GetData(), 32), FUncryptoolBytes(KeyAndIV.GetData() + 32, 16), OutputBytes, ErrorMessage);
+	}
+
 	bool EncryptChaCha20(const FUncryptoolBytes& InputBytes, const FUncryptoolBytes& Key, const FUncryptoolBytes& Nonce, TArray<uint8>& EncryptedBytes, FString& ErrorMessage)
 	{
 		EVP_CIPHER_CTX* Context = EVP_CIPHER_CTX_new();
