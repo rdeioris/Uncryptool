@@ -253,7 +253,7 @@ namespace Uncryptool
 		}
 
 		BIO* OpenSSLBio = BIO_new(BIO_s_mem());
-		if (!OpenSSLBio) 
+		if (!OpenSSLBio)
 		{
 			ErrorMessage = GetOpenSSLError();
 			EVP_PKEY_free(EVPPublicKey);
@@ -295,6 +295,38 @@ namespace Uncryptool
 		}
 
 		PEMString = BytesToUTF8String(PEMBytes);
+		return true;
+	}
+
+	bool PublicKeyToRaw(const FUncryptoolPublicKey& PublicKey, TArray<uint8>& OutputBytes, FString& ErrorMessage)
+	{
+		const uint8* PublicKeyDERPtr = PublicKey.DER.GetData();
+		EVP_PKEY* EVPPublicKey = d2i_PUBKEY(nullptr, &PublicKeyDERPtr, PublicKey.DER.Num());
+		if (!EVPPublicKey)
+		{
+			ErrorMessage = GetOpenSSLError();
+			return false;
+		}
+
+		SIZE_T KeyLen = 0;
+		if (EVP_PKEY_get_raw_public_key(EVPPublicKey, nullptr, &KeyLen) <= 0)
+		{
+			ErrorMessage = GetOpenSSLError();
+			EVP_PKEY_free(EVPPublicKey);
+			return false;
+		}
+
+		OutputBytes.SetNum(KeyLen, EAllowShrinking::No);
+
+		if (EVP_PKEY_get_raw_public_key(EVPPublicKey, OutputBytes.GetData(), &KeyLen) <= 0)
+		{
+			ErrorMessage = GetOpenSSLError();
+			EVP_PKEY_free(EVPPublicKey);
+			return false;
+		}
+
+		EVP_PKEY_free(EVPPublicKey);
+
 		return true;
 	}
 }

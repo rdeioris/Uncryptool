@@ -189,4 +189,45 @@ bool FUncryptoolTestsUtils_Bech32Encode::RunTest(const FString& Parameters)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FUncryptoolTestsUtils_Bech32EncodeUpper, "Uncryptool.UnitTests.Utils.Bech32EncodeUpper", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FUncryptoolTestsUtils_Bech32EncodeUpper::RunTest(const FString& Parameters)
+{
+	TArray<uint8> Data;
+	for (int32 Index = 0; Index < 256; Index++)
+	{
+		Data.Add(Index);
+	}
+	TArray<uint8> OutputBytes;
+	FString ErrorMessage;
+	bool bSuccess = Uncryptool::Bech32Encode("AGE", Data, OutputBytes, ErrorMessage);
+
+	TestTrue("bSuccess == true", bSuccess);
+	TestEqual("Bech32Encode == AGE1...", Uncryptool::BytesToUTF8String(OutputBytes),
+		"AGE1QQQSYQCYQ5RQWZQFPG9SCRGWPUGPZYSNZS23V9CCRYDPK8QARC0JQGFZYVJZ2F389Q5J52EV95HZ7VP3XGENGDFKXUURJW3M8S7NU06QG9PYX3Z9GER5SJ22FDXY6NJ02PG4Y56524T9WKZETFD4CH27TASXZCNRV3JKVEMGD94XKMRDDEHHQUTJWD682ANH0PUH57MU04L8LQYPS2PCFPVXS7YGNZ5T3JXCARUSJXFF89Y4J6TE3XV6NWWFM85L5ZS69GAY5KN2029F4246ETDW47CTRV4NKJ6MDDACHXATH09AH6LUPSWZC0ZVT3K8ERYU4J7VEH8VL5X36TFAF4WK6LVDNKKMMNWAAHLQU83W8E89UMN73602A0KWMMH07RCL9UL57HM0078ELTALEL07LUQK05E0");
+	return true;
+}
+
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FUncryptoolTestsUtils_Bech32Decode, "Uncryptool.UnitTests.Utils.Bech32Decode", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FUncryptoolTestsUtils_Bech32Decode::RunTest(const FString& Parameters)
+{
+	TArray<uint8> Data;
+	for (int32 Index = 0; Index < 256; Index++)
+	{
+		Data.Add(Index);
+	}
+
+	const char* Address = "age1qqqsyqcyq5rqwzqfpg9scrgwpugpzysnzs23v9ccrydpk8qarc0jqgfzyvjz2f389q5j52ev95hz7vp3xgengdfkxuurjw3m8s7nu06qg9pyx3z9ger5sj22fdxy6nj02pg4y56524t9wkzetfd4ch27tasxzcnrv3jkvemgd94xkmrddehhqutjwd682anh0puh57mu04l8lqyps2pcfpvxs7ygnz5t3jxcarusjxff89y4j6te3xv6nwwfm85l5zs69gay5kn2029f4246etdw47ctrv4nkj6mddachxath09ah6lupswzc0zvt3k8eryu4j7veh8vl5x36tfaf4wk6lvdnkkmmnwaahlqu83w8e89umn73602a0kwmmh07rcl9ul57hm0078eltalel07luqk05e0";
+
+	TArray<uint8> OutputBytes;
+	FString ErrorMessage;
+	bool bSuccess = Uncryptool::Bech32Decode("age", Address, OutputBytes, ErrorMessage);
+
+	TestTrue("bSuccess == true", bSuccess);
+	TestEqual("Bech32Decode == Data", OutputBytes, Data);
+	return true;
+}
+
 #endif

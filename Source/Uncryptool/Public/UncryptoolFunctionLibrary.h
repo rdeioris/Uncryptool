@@ -228,7 +228,7 @@ namespace Uncryptool
 
 	UNCRYPTOOL_API uint32 Bech32Polymod(const FUncryptoolBytes& InputBytes);
 	UNCRYPTOOL_API bool Bech32Encode(const FUncryptoolBytes& HRP, const FUncryptoolBytes& InputBytes, TArray<uint8>& OutputBytes, FString& ErrorMessage);
-	UNCRYPTOOL_API bool Bech32Decode(const FUncryptoolBytes& InputBytes, TArray<uint8>& OutputBytes, FString& ErrorMessage);
+	UNCRYPTOOL_API bool Bech32Decode(const FUncryptoolBytes& HRP, const FUncryptoolBytes& InputBytes, TArray<uint8>& OutputBytes, FString& ErrorMessage);
 
 	/*
 	* Hashing functions
@@ -322,6 +322,12 @@ namespace Uncryptool
 	*/
 
 	UNCRYPTOOL_API bool PBKDF2HMAC(const FUncryptoolBytes& Password, const FUncryptoolBytes& Salt, const int32 Iterations, const EUncryptoolHash Hash, const int32 KeyLen, TArray<uint8>& OutputBytes, FString& ErrorMessage);
+
+	/*
+	* Age functions
+	*/
+
+	UNCRYPTOOL_API bool LoadAgeIdentity(const FUncryptoolBytes& InputBytes, FUncryptoolPrivateKey& PrivateKey, FUncryptoolPublicKey& PublicKey, FString& ErrorMessage);
 }
 
 

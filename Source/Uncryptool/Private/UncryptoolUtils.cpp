@@ -1,4 +1,4 @@
-// Copyright 2025 - Roberto De Ioris
+﻿// Copyright 2025 - Roberto De Ioris
 
 #include "UncryptoolFunctionLibrary.h"
 
@@ -350,20 +350,31 @@ namespace Uncryptool
 
 	bool Bech32Encode(const FUncryptoolBytes& HRP, const FUncryptoolBytes& InputBytes, TArray<uint8>& OutputBytes, FString& ErrorMessage)
 	{
-		static const char* Charset = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
+		FString Charset = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
+
+		if (HRP.Num() < 1)
+		{
+			ErrorMessage = "Invalid HRP";
+			return false;
+		}
+
+		if (FChar::IsUpper(HRP.GetData()[0]))
+		{
+			Charset = Charset.ToUpper();
+		}
 
 		TArray<uint8> Data;
 
 		for (int32 HRPIndex = 0; HRPIndex < HRP.Num(); HRPIndex++)
 		{
-			Data.Add(HRP.GetData()[HRPIndex] >> 5);
+			Data.Add(FChar::ToLower(HRP.GetData()[HRPIndex]) >> 5);
 		}
 
 		Data.Add(0);
 
 		for (int32 HRPIndex = 0; HRPIndex < HRP.Num(); HRPIndex++)
 		{
-			Data.Add(HRP.GetData()[HRPIndex] & 0x1F);
+			Data.Add(FChar::ToLower(HRP.GetData()[HRPIndex]) & 0x1F);
 		}
 
 		const int32 NumBits = InputBytes.Num() * 8;
@@ -406,12 +417,107 @@ namespace Uncryptool
 
 		// encode
 		OutputBytes.Empty();
-		OutputBytes.Append(HRP.GetData(), HRP.Num());
+		for (int32 HRPIndex = 0; HRPIndex < HRP.Num(); HRPIndex++)
+		{
+			OutputBytes.Add(HRP.GetData()[HRPIndex]);
+		}
 		OutputBytes.Add('1');
 
 		for (int32 Index = DataOffset; Index < Data.Num(); Index++)
 		{
 			OutputBytes.Add(Charset[Data[Index]]);
+		}
+
+		return true;
+	}
+
+	bool Bech32Decode(const FUncryptoolBytes& HRP, const FUncryptoolBytes& InputBytes, TArray<uint8>& OutputBytes, FString& ErrorMessage)
+	{
+		FString Charset = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
+
+		if (HRP.Num() < 1 || HRP.Num() >= InputBytes.Num() || FMemory::Memcmp(HRP.GetData(), InputBytes.GetData(), HRP.Num()) && InputBytes.GetData()[HRP.Num()] != '1')
+		{
+			ErrorMessage = "Invalid HRP";
+			return false;
+		}
+
+		if (HRP.Num() + 1 + 6 > InputBytes.Num())
+		{
+			ErrorMessage = "Invalid Checksum";
+			return false;
+		}
+
+		if (FChar::IsUpper(HRP.GetData()[0]))
+		{
+			Charset = Charset.ToUpper();
+		}
+
+		TArray<uint8> Data;
+
+		for (int32 HRPIndex = 0; HRPIndex < HRP.Num(); HRPIndex++)
+		{
+			Data.Add(FChar::ToLower(HRP.GetData()[HRPIndex]) >> 5);
+		}
+
+		Data.Add(0);
+
+		for (int32 HRPIndex = 0; HRPIndex < HRP.Num(); HRPIndex++)
+		{
+			Data.Add(FChar::ToLower(HRP.GetData()[HRPIndex]) & 0x1F);
+		}
+
+		for (int32 Index = HRP.Num() + 1; Index < InputBytes.Num() - 6; Index++)
+		{
+			int32 Value = -1;
+			if (!Charset.FindChar(InputBytes.GetData()[Index], Value))
+			{
+				ErrorMessage = "Invalid Character";
+				return false;
+			}
+			Data.Add(Value);
+		}
+
+		Data.AddZeroed(6);
+
+		const uint32 Polymod = Bech32Polymod(Data) ^ 1;
+
+		TStaticArray<uint8, 6> Checksum;
+		// checksum
+		for (int32 ChecksumIndex = 0; ChecksumIndex < 6; ChecksumIndex++)
+		{
+			Checksum[ChecksumIndex] = Charset[(Polymod >> (5 * (5 - ChecksumIndex))) & 0x1F];
+		}
+
+		if (FMemory::Memcmp(Checksum.GetData(), InputBytes.GetData() + InputBytes.Num() - 6, 6))
+		{
+			ErrorMessage = "Invalid Checksum";
+			return false;
+		}
+
+		OutputBytes.Empty();
+
+		uint8 Accumulator = 0;
+		uint8 BitCounter = 0;
+		for (int32 Index = HRP.Num() + 1; Index < InputBytes.Num() - 6; Index++)
+		{
+			int32 Value = -1;
+			if (!Charset.FindChar(InputBytes.GetData()[Index], Value))
+			{
+				ErrorMessage = "Invalid Character";
+				return false;
+			}
+			const uint8 Byte = static_cast<uint8>(Value);
+			for (int32 BitIndex = 0; BitIndex < 5; BitIndex++)
+			{
+				Accumulator |= ((Byte >> (4 - BitIndex)) & 0x01) << (7 - BitCounter);
+				BitCounter++;
+				if (BitCounter >= 8)
+				{
+					OutputBytes.Add(Accumulator);
+					Accumulator = 0;
+					BitCounter = 0;
+				}
+			}
 		}
 
 		return true;
