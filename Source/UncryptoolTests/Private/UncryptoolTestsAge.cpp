@@ -120,4 +120,31 @@ AGE-SECRET-KEY-1J0PUQQ598M3R8ST3K42XQLJTYDPUW95HC584GL2RPADMKE3Y25VQ5C3UZY)";
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FUncryptoolTestsAge_LoadIdentityExample, "Uncryptool.FunctionalTests.Age.LoadIdentityExample", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FUncryptoolTestsAge_LoadIdentityExample::RunTest(const FString& Parameters)
+{
+	const char* Identity = "AGE-SECRET-KEY-1GFPYYSJZGFPYYSJZGFPYYSJZGFPYYSJZGFPYYSJZGFPYYSJZGFPQ4EGAEX";
+
+	FUncryptoolPrivateKey PrivateKey;
+	FUncryptoolPublicKey PublicKey;
+	FString ErrorMessage;
+	bool bSuccess = Uncryptool::LoadAgeIdentity(Identity, PrivateKey, PublicKey, ErrorMessage);
+
+	TestTrue("bSuccess == true", bSuccess);
+	TestEqual("PrivateKey.Type == EC", PrivateKey.Type, EUncryptoolKey::EC);
+
+	TArray<uint8> PublicKeyRaw;
+	bSuccess = Uncryptool::PublicKeyToRaw(PublicKey, PublicKeyRaw, ErrorMessage);
+	TestTrue("bSuccess == true", bSuccess);
+
+	TArray<uint8> PublicKeyAge;
+	bSuccess = Uncryptool::Bech32Encode("age", PublicKeyRaw, PublicKeyAge, ErrorMessage);
+	TestTrue("bSuccess == true", bSuccess);
+
+	TestEqual("PublicKeyAge == \"age1zvkyg2lqzraa2lnjvqej32nkuu0ues2s82hzrye869xeexvn73equnujwj\"", Uncryptool::BytesToUTF8String(PublicKeyAge), "age1zvkyg2lqzraa2lnjvqej32nkuu0ues2s82hzrye869xeexvn73equnujwj");
+
+	return true;
+}
+
 #endif
