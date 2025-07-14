@@ -226,6 +226,10 @@ namespace Uncryptool
 
 	UNCRYPTOOL_API bool BitFromBytes(const FUncryptoolBytes& InputBytes, const int32 Offset, uint8& BitValue);
 
+	UNCRYPTOOL_API uint32 Bech32Polymod(const FUncryptoolBytes& InputBytes);
+	UNCRYPTOOL_API bool Bech32Encode(const FUncryptoolBytes& HRP, const FUncryptoolBytes& InputBytes, TArray<uint8>& OutputBytes, FString& ErrorMessage);
+	UNCRYPTOOL_API bool Bech32Decode(const FUncryptoolBytes& InputBytes, TArray<uint8>& OutputBytes, FString& ErrorMessage);
+
 	/*
 	* Hashing functions
 	*/

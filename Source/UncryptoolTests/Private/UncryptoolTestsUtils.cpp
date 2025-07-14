@@ -170,4 +170,23 @@ bool FUncryptoolTestsUtils_StructPackUInt16::RunTest(const FString& Parameters)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FUncryptoolTestsUtils_Bech32Encode, "Uncryptool.UnitTests.Utils.Bech32Encode", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FUncryptoolTestsUtils_Bech32Encode::RunTest(const FString& Parameters)
+{
+	TArray<uint8> Data;
+	for (int32 Index = 0; Index < 256; Index++)
+	{
+		Data.Add(Index);
+	}
+	TArray<uint8> OutputBytes;
+	FString ErrorMessage;
+	bool bSuccess = Uncryptool::Bech32Encode("age", Data, OutputBytes, ErrorMessage);
+
+	TestTrue("bSuccess == true", bSuccess);
+	TestEqual("Bech32Encode == age1...", Uncryptool::BytesToUTF8String(OutputBytes),
+		"age1qqqsyqcyq5rqwzqfpg9scrgwpugpzysnzs23v9ccrydpk8qarc0jqgfzyvjz2f389q5j52ev95hz7vp3xgengdfkxuurjw3m8s7nu06qg9pyx3z9ger5sj22fdxy6nj02pg4y56524t9wkzetfd4ch27tasxzcnrv3jkvemgd94xkmrddehhqutjwd682anh0puh57mu04l8lqyps2pcfpvxs7ygnz5t3jxcarusjxff89y4j6te3xv6nwwfm85l5zs69gay5kn2029f4246etdw47ctrv4nkj6mddachxath09ah6lupswzc0zvt3k8eryu4j7veh8vl5x36tfaf4wk6lvdnkkmmnwaahlqu83w8e89umn73602a0kwmmh07rcl9ul57hm0078eltalel07luqk05e0");
+	return true;
+}
+
 #endif

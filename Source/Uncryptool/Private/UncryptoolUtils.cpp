@@ -322,10 +322,98 @@ namespace Uncryptool
 	{
 		const int32 ByteIndex = Offset / 8;
 		const int32 BitIndex = Offset % 8;
-		if (Offset >= InputBytes.Num())
+		if (ByteIndex >= InputBytes.Num())
 		{
 			return false;
 		}
-		return (InputBytes.GetData()[ByteIndex] >> (7 - BitIndex)) & 0x01;
+		BitValue = (InputBytes.GetData()[ByteIndex] >> (7 - BitIndex)) & 0x01;
+		return true;
+	}
+
+	uint32 Bech32Polymod(const FUncryptoolBytes& InputBytes)
+	{
+		static const uint32 Generator[] = { 0x3b6a57b2UL, 0x26508e6dUL, 0x1ea119faUL, 0x3d4233ddUL, 0x2a1462b3UL };
+		uint32 Checksum = 1;
+
+		for (int32 Index = 0; Index < InputBytes.Num(); Index++)
+		{
+			const uint8 Top = Checksum >> 25;
+			Checksum = ((Checksum & 0x1FFFFFF) << 5) ^ InputBytes.GetData()[Index];
+			for (int32 BitIndex = 0; BitIndex < 5; BitIndex++)
+			{
+				Checksum ^= (Top >> BitIndex) & 1 ? Generator[BitIndex] : 0;
+			}
+		}
+
+		return Checksum;
+	}
+
+	bool Bech32Encode(const FUncryptoolBytes& HRP, const FUncryptoolBytes& InputBytes, TArray<uint8>& OutputBytes, FString& ErrorMessage)
+	{
+		static const char* Charset = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
+
+		TArray<uint8> Data;
+
+		for (int32 HRPIndex = 0; HRPIndex < HRP.Num(); HRPIndex++)
+		{
+			Data.Add(HRP.GetData()[HRPIndex] >> 5);
+		}
+
+		Data.Add(0);
+
+		for (int32 HRPIndex = 0; HRPIndex < HRP.Num(); HRPIndex++)
+		{
+			Data.Add(HRP.GetData()[HRPIndex] & 0x1F);
+		}
+
+		const int32 NumBits = InputBytes.Num() * 8;
+		uint8 Accumulator = 0;
+		uint8 BitCounter = 0;
+		const int32 DataOffset = Data.Num();
+		for (int32 BitIndex = 0; BitIndex < NumBits; BitIndex++)
+		{
+			uint8 Bit = 0;
+			if (!BitFromBytes(InputBytes, BitIndex, Bit))
+			{
+				ErrorMessage = "Invalid bit stream";
+				return false;
+			}
+			Accumulator |= Bit << (4 - BitCounter);
+			BitCounter++;
+			if (BitCounter >= 5)
+			{
+				Data.Add(Accumulator);
+				BitCounter = 0;
+				Accumulator = 0;
+			}
+		}
+
+		if (BitCounter > 0)
+		{
+			Data.Add(Accumulator);
+		}
+
+		const int32 ChecksumOffset = Data.Num();
+		Data.AddZeroed(6);
+
+		const uint32 Polymod = Bech32Polymod(Data) ^ 1;
+
+		// checksum
+		for (int32 ChecksumIndex = 0; ChecksumIndex < 6; ChecksumIndex++)
+		{
+			Data[ChecksumOffset + ChecksumIndex] = (Polymod >> (5 * (5 - ChecksumIndex))) & 0x1F;
+		}
+
+		// encode
+		OutputBytes.Empty();
+		OutputBytes.Append(HRP.GetData(), HRP.Num());
+		OutputBytes.Add('1');
+
+		for (int32 Index = DataOffset; Index < Data.Num(); Index++)
+		{
+			OutputBytes.Add(Charset[Data[Index]]);
+		}
+
+		return true;
 	}
 }
