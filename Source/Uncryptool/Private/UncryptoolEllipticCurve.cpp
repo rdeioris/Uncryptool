@@ -123,6 +123,65 @@ namespace Uncryptool
 		return true;
 	}
 
+	bool ECPrivateKeyFromRaw(const EUncryptoolEllipticCurve EllipticCurve, const FUncryptoolBytes& InputBytes, FUncryptoolPrivateKey& PrivateKey, FString& ErrorMessage)
+	{
+		int32 Nid = -1;
+		switch (EllipticCurve)
+		{
+		case EUncryptoolEllipticCurve::PRIME256V1:
+			Nid = NID_X9_62_prime256v1;
+			break;
+		case EUncryptoolEllipticCurve::SECP256K1:
+			Nid = NID_secp256k1;
+			break;
+		case EUncryptoolEllipticCurve::SECP384R1:
+			Nid = NID_secp384r1;
+			break;
+		case EUncryptoolEllipticCurve::SECP521R1:
+			Nid = NID_secp521r1;
+			break;
+		case EUncryptoolEllipticCurve::X25519:
+			Nid = NID_X25519;
+			break;
+		default:
+			ErrorMessage = "Unknown Elliptic Curve";
+			return false;
+		}
+
+		EVP_PKEY* EVPKey = EVP_PKEY_new_raw_private_key(Nid == NID_X25519 ? EVP_PKEY_X25519 : EVP_PKEY_EC, nullptr, InputBytes.GetData(), InputBytes.Num());
+		if (!EVPKey)
+		{
+			ErrorMessage = GetOpenSSLError();
+			return false;
+		}
+
+		PrivateKey.Type = EUncryptoolKey::EC;
+		PrivateKey.Bits = EVP_PKEY_bits(EVPKey);
+
+		int32 DerLen = i2d_PrivateKey(EVPKey, nullptr);
+		if (DerLen <= 0)
+		{
+			ErrorMessage = GetOpenSSLError();
+			EVP_PKEY_free(EVPKey);
+			return false;
+		}
+
+		PrivateKey.DER.SetNum(DerLen, EAllowShrinking::No);
+
+		uint8* DERPtr = PrivateKey.DER.GetData();
+
+		DerLen = i2d_PrivateKey(EVPKey, &DERPtr);
+		if (DerLen <= 0)
+		{
+			ErrorMessage = GetOpenSSLError();
+			EVP_PKEY_free(EVPKey);
+			return false;
+		}
+
+		EVP_PKEY_free(EVPKey);
+		return true;
+	}
+
 	bool ECDSADigestSign(const FUncryptoolPrivateKey& PrivateKey, const FUncryptoolBytes& InputBytes, const EUncryptoolHash Hash, TArray<uint8>& OutputSignature, FString& ErrorMessage)
 	{
 		const EVP_MD* HashAlgo = nullptr;

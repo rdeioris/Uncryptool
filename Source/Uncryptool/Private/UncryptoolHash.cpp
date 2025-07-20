@@ -192,23 +192,4 @@ namespace Uncryptool
 		return true;
 	}
 
-	bool PBEScrypt(const FUncryptoolBytes& Password, const FUncryptoolBytes& Salt, const uint64 N, const uint64 R, const uint64 P, const int32 KeyLen, TArray<uint8>& OutputBytes, FString& ErrorMessage)
-	{
-		if (KeyLen < 1)
-		{
-			ErrorMessage = "KeyLen must be > 0";
-			return false;
-		}
-
-		OutputBytes.SetNum(KeyLen, EAllowShrinking::No);
-		if (EVP_PBE_scrypt(Password.GetData<char>(), Password.Num(), Salt.GetData(), Salt.Num(), N, R, P, 0, OutputBytes.GetData(), KeyLen) <= 0)
-		{
-			ErrorMessage = GetOpenSSLError();
-			return false;
-		}
-
-		return true;
-	}
-
-
 }

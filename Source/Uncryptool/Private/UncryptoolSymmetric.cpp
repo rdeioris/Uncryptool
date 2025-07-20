@@ -273,6 +273,70 @@ namespace Uncryptool
 		return true;
 	}
 
+	bool EncryptChaCha20Poly1305(const FUncryptoolBytes& InputBytes, const FUncryptoolBytes& Key, const FUncryptoolBytes& Nonce, const FUncryptoolBytes& AAD, TArray<uint8>& EncryptedBytes, FString& ErrorMessage)
+	{
+		EVP_CIPHER_CTX* Context = EVP_CIPHER_CTX_new();
+		if (!Context)
+		{
+			ErrorMessage = GetOpenSSLError();
+			return false;
+		}
+
+		if (EVP_EncryptInit_ex(Context, EVP_chacha20_poly1305(), nullptr, Key.GetData(), Nonce.GetData()) <= 0)
+		{
+			ErrorMessage = GetOpenSSLError();
+			EVP_CIPHER_CTX_free(Context);
+			return false;
+		}
+
+		if (!CheckEVPKeySize(Context, Key))
+		{
+			ErrorMessage = "Invalid Key size for ChaCha20";
+			EVP_CIPHER_CTX_free(Context);
+			return false;
+		}
+
+		if (!CheckEVPIvSize(Context, Nonce))
+		{
+			ErrorMessage = "Invalid Nonce size for ChaCha20";
+			EVP_CIPHER_CTX_free(Context);
+			return false;
+		}
+
+		if (AAD.Num() > 0)
+		{
+			if (EVP_EncryptUpdate(Context, nullptr, nullptr, AAD.GetData(), AAD.Num()) <= 0)
+			{
+				ErrorMessage = GetOpenSSLError();
+				EVP_CIPHER_CTX_free(Context);
+				EncryptedBytes.Empty();
+				return false;
+			}
+		}
+
+		EncryptedBytes.SetNum(InputBytes.Num(), EAllowShrinking::No);
+		int32 OutputSize = EncryptedBytes.Num();
+		if (EVP_EncryptUpdate(Context, EncryptedBytes.GetData(), &OutputSize, InputBytes.GetData(), InputBytes.Num()) <= 0)
+		{
+			ErrorMessage = GetOpenSSLError();
+			EVP_CIPHER_CTX_free(Context);
+			EncryptedBytes.Empty();
+			return false;
+		}
+
+		if (EVP_EncryptFinal_ex(Context, EncryptedBytes.GetData(), &OutputSize) <= 0)
+		{
+			ErrorMessage = GetOpenSSLError();
+			EVP_CIPHER_CTX_free(Context);
+			EncryptedBytes.Empty();
+			return false;
+		}
+
+		EVP_CIPHER_CTX_free(Context);
+
+		return true;
+	}
+
 	bool DecryptAES256CTR(const FUncryptoolBytes& EncryptedBytes, const FUncryptoolBytes& Key, const FUncryptoolBytes& Counter, TArray<uint8>& OutputBytes, FString& ErrorMessage)
 	{
 		EVP_CIPHER_CTX* Context = EVP_CIPHER_CTX_new();

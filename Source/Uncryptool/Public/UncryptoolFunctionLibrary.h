@@ -267,6 +267,7 @@ namespace Uncryptool
 	UNCRYPTOOL_API bool DecryptChaCha20(const FUncryptoolBytes& EncryptedBytes, const FUncryptoolBytes& Key, const FUncryptoolBytes& Nonce, TArray<uint8>& OutputBytes, FString& ErrorMessage);
 	UNCRYPTOOL_API bool DecryptChaCha20Salted(const FUncryptoolBytes& EncryptedBytes, const FUncryptoolBytes& Password, const EUncryptoolKeyDerivation KeyDerivation, const int32 Iterations, TArray<uint8>& OutputBytes, FString& ErrorMessage);
 	UNCRYPTOOL_API bool EncryptChaCha20(const FUncryptoolBytes& InputBytes, const FUncryptoolBytes& Key, const FUncryptoolBytes& Nonce, TArray<uint8>& EncryptedBytes, FString& ErrorMessage);
+	UNCRYPTOOL_API bool EncryptChaCha20Poly1305(const FUncryptoolBytes& InputBytes, const FUncryptoolBytes& Key, const FUncryptoolBytes& Nonce, const FUncryptoolBytes& AAD, TArray<uint8>& EncryptedBytes, FString& ErrorMessage);
 
 	UNCRYPTOOL_API bool DecryptAES256CTR(const FUncryptoolBytes& EncryptedBytes, const FUncryptoolBytes& Key, const FUncryptoolBytes& Counter, TArray<uint8>& OutputBytes, FString& ErrorMessage);
 
@@ -279,6 +280,7 @@ namespace Uncryptool
 	*/
 
 	UNCRYPTOOL_API bool GenerateECKey(const EUncryptoolEllipticCurve EllipticCurve, FUncryptoolPrivateKey& PrivateKey, FUncryptoolPublicKey& PublicKey, FString& ErrorMessage);
+	UNCRYPTOOL_API bool ECPrivateKeyFromRaw(const EUncryptoolEllipticCurve EllipticCurve, const FUncryptoolBytes& InputBytes, FUncryptoolPrivateKey& PrivateKey, FString& ErrorMessage);
 	UNCRYPTOOL_API bool ECDSADigestSign(const FUncryptoolPrivateKey& PrivateKey, const FUncryptoolBytes& InputBytes, const EUncryptoolHash Hash, TArray<uint8>& OutputSignature, FString& ErrorMessage);
 	UNCRYPTOOL_API bool ECDSADigestVerify(const FUncryptoolPublicKey& PublicKey, const FUncryptoolBytes& InputBytes, const EUncryptoolHash Hash, const FUncryptoolBytes& SignatureBytes, FString& ErrorMessage);
 	UNCRYPTOOL_API bool ECDH(const FUncryptoolPrivateKey& PrivateKey, const FUncryptoolPublicKey& PublicKey, TArray<uint8>& OutputSharedSecret, FString& ErrorMessage);
@@ -303,8 +305,9 @@ namespace Uncryptool
 	UNCRYPTOOL_API bool PEMToPublicKey(const FString& PEMString, FUncryptoolPublicKey& PublicKey, FString& ErrorMessage);
 	UNCRYPTOOL_API bool PublicKeyToPEM(const FUncryptoolPublicKey& PublicKey, TArray<uint8>& PEMBytes, FString& ErrorMessage);
 	UNCRYPTOOL_API bool PublicKeyToPEM(const FUncryptoolPublicKey& PublicKey, FString& PEMString, FString& ErrorMessage);
-	UNCRYPTOOL_API bool PrivateKeyToRaw(const FUncryptoolPrivateKey& PublicKey, TArray<uint8>& OutputBytes, FString& ErrorMessage);
+	UNCRYPTOOL_API bool PrivateKeyToRaw(const FUncryptoolPrivateKey& PrivateKey, TArray<uint8>& OutputBytes, FString& ErrorMessage);
 	UNCRYPTOOL_API bool PublicKeyToRaw(const FUncryptoolPublicKey& PublicKey, TArray<uint8>& OutputBytes, FString& ErrorMessage);
+	
 
 
 	UNCRYPTOOL_API bool PublicKeyMatchesPrivateKey(const FUncryptoolPublicKey& PublicKey, const FUncryptoolPrivateKey& PrivateKey, FString& ErrorMessage);
