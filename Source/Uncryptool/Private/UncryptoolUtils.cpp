@@ -522,4 +522,15 @@ namespace Uncryptool
 
 		return true;
 	}
+
+	TArray<uint8> Base64Encode(const FUncryptoolBytes& InputBytes, const bool bPadding)
+	{
+		FString Base64 = FBase64::Encode(InputBytes.GetData(), InputBytes.Num(), EBase64Mode::Standard);
+		if (!bPadding)
+		{
+			Base64 = Base64.Replace(TEXT("="), TEXT(""));
+		}
+
+		return Uncryptool::UTF8StringToBytes(Base64);
+	}
 }

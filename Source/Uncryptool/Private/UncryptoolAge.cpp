@@ -152,7 +152,7 @@ namespace Uncryptool
 		}
 
 		EncryptedBytes.Empty();
-		EncryptedBytes.Append("age-encryption.org/v1\n");
+		EncryptedBytes.Append(reinterpret_cast<const uint8*>("age-encryption.org/v1\n"), 22);
 		for (const FUncryptoolPublicKey& PublicKey : PublicKeys)
 		{
 			TArray<uint8> PublicKeyRaw;
@@ -180,8 +180,14 @@ namespace Uncryptool
 				return false;
 			}
 
-			FUncryptoolPublicKey EphemeralShare;
-			if (!Uncryptool::PublicKeyFromPrivateKey(EphemeralPrivateKey, EphemeralShare, ErrorMessage))
+			FUncryptoolPublicKey EphemeralSharePublicKey;
+			if (!Uncryptool::PublicKeyFromPrivateKey(EphemeralPrivateKey, EphemeralSharePublicKey, ErrorMessage))
+			{
+				return false;
+			}
+
+			TArray<uint8> EphemeralShare;
+			if (!Uncryptool::PublicKeyToRaw(EphemeralSharePublicKey, EphemeralShare, ErrorMessage))
 			{
 				return false;
 			}
@@ -193,10 +199,7 @@ namespace Uncryptool
 			}
 
 			TArray<uint8> Salt;
-			if (!Uncryptool::PublicKeyToRaw(EphemeralShare, Salt, ErrorMessage))
-			{
-				return false;
-			}
+			Salt.Append(EphemeralShare);
 			Salt.Append(PublicKeyRaw);
 
 			TArray<uint8> WrappingKey;
@@ -206,13 +209,23 @@ namespace Uncryptool
 			}
 
 			TArray<uint8> StanzaBody;
-			if (!Uncryptool::EncryptChaCha20Poly1305(FileKey, WrappingKey, NonceZero, "", StanzaBody, ErrorMessage))
+			TArray<uint8> StanzaBodyTag;
+			if (!Uncryptool::EncryptChaCha20Poly1305(FileKey, WrappingKey, NonceZero, "", StanzaBody, StanzaBodyTag, ErrorMessage))
 			{
 				return false;
 			}
 
+			StanzaBody.Append(StanzaBodyTag);
+
 			// append stanza line
+			EncryptedBytes.Append(reinterpret_cast<const uint8*>("-> X25519 "), 10);
+			EncryptedBytes.Append(Uncryptool::Base64Encode(EphemeralShare, false));
+			EncryptedBytes.Add('\n');
+			EncryptedBytes.Append(Uncryptool::Base64Encode(StanzaBody, false));
+			EncryptedBytes.Add('\n');
 		}
+
+		EncryptedBytes.Append(reinterpret_cast<const uint8*>("---"), 3);
 
 		// compute HMAC key
 		TArray<uint8> HMACKey;
@@ -221,29 +234,54 @@ namespace Uncryptool
 			return false;
 		}
 
-
 		// compute HMAC
 		TArray<uint8> HMAC;
-		if (!Uncryptool::HMAC(EUncryptoolHash::SHA256, "", HMACKey, HMAC, ErrorMessage))
+		if (!Uncryptool::HMAC(EUncryptoolHash::SHA256, EncryptedBytes, HMACKey, HMAC, ErrorMessage))
 		{
 			return false;
 		}
 
 		// append HMAC
+		EncryptedBytes.Add(' ');
+		EncryptedBytes.Append(Uncryptool::Base64Encode(HMAC, false));
+		EncryptedBytes.Add('\n');
 
 		// append payload...
+		EncryptedBytes.Append(NoncePayload);
 
-		// first nonce
-
-		// then chunks...
-		TArray<uint8> NonceChunk;
-
-		TArray<uint8> Chunk;
-		if (!Uncryptool::EncryptChaCha20Poly1305(InputBytes, PayloadKey, NonceChunk, "", Chunk, ErrorMessage))
+		uint64 ChunkCounter = 0;
+		uint64 PayloadOffset = 0;
+		while (PayloadOffset < InputBytes.Num())
 		{
-			return false;
-		}
+			// nonce
+			TArray<uint8> NonceChunk;
+			NonceChunk.AddZeroed(12);
 
+			const int32 ChunkSize = FMath::Min<int32>(65536, InputBytes.Num() - PayloadOffset);
+
+			const uint64 ChunkCounterBigEndian = BYTESWAP_ORDER64(ChunkCounter);
+
+			FMemory::Memcpy(NonceChunk.GetData() + 3, &ChunkCounterBigEndian, sizeof(uint64));
+
+			// last chunk?
+			if (PayloadOffset + ChunkSize >= InputBytes.Num())
+			{
+				NonceChunk[11] = 1;
+			}
+
+			TArray<uint8> Chunk;
+			TArray<uint8> Tag;
+			if (!Uncryptool::EncryptChaCha20Poly1305(FUncryptoolBytes(InputBytes.GetData() + PayloadOffset, ChunkSize), PayloadKey, NonceChunk, "", Chunk, Tag, ErrorMessage))
+			{
+				return false;
+			}
+
+			EncryptedBytes.Append(Chunk);
+			EncryptedBytes.Append(Tag);
+
+			PayloadOffset += ChunkSize;
+			ChunkCounter++;
+		}
 
 		return true;
 	}

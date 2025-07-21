@@ -273,7 +273,7 @@ namespace Uncryptool
 		return true;
 	}
 
-	bool EncryptChaCha20Poly1305(const FUncryptoolBytes& InputBytes, const FUncryptoolBytes& Key, const FUncryptoolBytes& Nonce, const FUncryptoolBytes& AAD, TArray<uint8>& EncryptedBytes, FString& ErrorMessage)
+	bool EncryptChaCha20Poly1305(const FUncryptoolBytes& InputBytes, const FUncryptoolBytes& Key, const FUncryptoolBytes& Nonce, const FUncryptoolBytes& AAD, TArray<uint8>& EncryptedBytes, TArray<uint8>& Tag, FString& ErrorMessage)
 	{
 		EVP_CIPHER_CTX* Context = EVP_CIPHER_CTX_new();
 		if (!Context)
@@ -325,6 +325,15 @@ namespace Uncryptool
 		}
 
 		if (EVP_EncryptFinal_ex(Context, EncryptedBytes.GetData(), &OutputSize) <= 0)
+		{
+			ErrorMessage = GetOpenSSLError();
+			EVP_CIPHER_CTX_free(Context);
+			EncryptedBytes.Empty();
+			return false;
+		}
+
+		Tag.SetNum(16, EAllowShrinking::No);
+		if (EVP_CIPHER_CTX_ctrl(Context, EVP_CTRL_AEAD_GET_TAG, 16, Tag.GetData()) <= 0)
 		{
 			ErrorMessage = GetOpenSSLError();
 			EVP_CIPHER_CTX_free(Context);

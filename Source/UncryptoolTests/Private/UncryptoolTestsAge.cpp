@@ -147,4 +147,38 @@ bool FUncryptoolTestsAge_LoadIdentityExample::RunTest(const FString& Parameters)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FUncryptoolTestsAge_EncryptX25519, "Uncryptool.FunctionalTests.Age.EncryptX25519", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FUncryptoolTestsAge_EncryptX25519::RunTest(const FString& Parameters)
+{
+	TArray<TPair<FUncryptoolPrivateKey, FUncryptoolPublicKey>> Identities;
+	Identities.AddDefaulted(4);
+
+	FString ErrorMessage;
+	bool bSuccess = false;
+
+	bSuccess = Uncryptool::LoadAgeIdentity("AGE-SECRET-KEY-1AQYLW9QNW4K7JLUY79UG0VGVULUU9895NWCE05PEXH7SCN94DVDS8CRMAT", Identities[0].Key, Identities[0].Value, ErrorMessage);
+	TestTrue("bSuccess == true", bSuccess);
+	bSuccess = Uncryptool::LoadAgeIdentity("AGE-SECRET-KEY-1ZAMFFTFK7W02MKCKW8SHNW3AWXZFZQAGY9PL4W2PTPTD66NHYASQH0QX7W", Identities[1].Key, Identities[1].Value, ErrorMessage);
+	TestTrue("bSuccess == true", bSuccess);
+	bSuccess = Uncryptool::LoadAgeIdentity("AGE-SECRET-KEY-16MJXTEVCHRY347XGPGPPUQVV8H43DDRWZ8SXS8LJ7KYTZ5XPXQXSHLN8PD", Identities[2].Key, Identities[2].Value, ErrorMessage);
+	TestTrue("bSuccess == true", bSuccess);
+	bSuccess = Uncryptool::LoadAgeIdentity("AGE-SECRET-KEY-1J0PUQQ598M3R8ST3K42XQLJTYDPUW95HC584GL2RPADMKE3Y25VQ5C3UZY", Identities[3].Key, Identities[3].Value, ErrorMessage);
+	TestTrue("bSuccess == true", bSuccess);
+
+	const char* Payload = "Hello World\nTest1\nTest2\nTest3\nEND";
+
+	TArray<FUncryptoolPublicKey> PublicKeys;
+	for (const TPair<FUncryptoolPrivateKey, FUncryptoolPublicKey>& Identity : Identities)
+	{
+		PublicKeys.Add(Identity.Value);
+	}
+
+	TArray<uint8> AgeOutput;
+	bSuccess = Uncryptool::EncryptAgeX25519(Payload, PublicKeys, AgeOutput, ErrorMessage);
+	TestTrue("bSuccess == true", bSuccess);
+
+	return true;
+}
+
 #endif

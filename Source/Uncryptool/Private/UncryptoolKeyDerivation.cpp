@@ -88,15 +88,7 @@ namespace Uncryptool
 			return false;
 		}
 
-		// 7. Derive keying material
-		SIZE_T KeyLen = 0;
-		if (EVP_PKEY_derive(Context, nullptr, &KeyLen) <= 0)
-		{
-			ErrorMessage = GetOpenSSLError();
-			EVP_PKEY_CTX_free(Context);
-			return false;
-		}
-
+		SIZE_T KeyLen = EVP_MD_size(HashAlgo);
 		OutputBytes.SetNum(KeyLen, EAllowShrinking::No);
 
 		if (EVP_PKEY_derive(Context, OutputBytes.GetData(), &KeyLen) <= 0)
@@ -107,7 +99,7 @@ namespace Uncryptool
 		}
 
 		EVP_PKEY_CTX_free(Context);
-		return 0;
+		return true;
 	}
 
 	bool PBEScrypt(const FUncryptoolBytes& Password, const FUncryptoolBytes& Salt, const uint64 N, const uint64 R, const uint64 P, const int32 KeyLen, TArray<uint8>& OutputBytes, FString& ErrorMessage)

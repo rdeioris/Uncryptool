@@ -230,6 +230,8 @@ namespace Uncryptool
 	UNCRYPTOOL_API bool Bech32Encode(const FUncryptoolBytes& HRP, const FUncryptoolBytes& InputBytes, TArray<uint8>& OutputBytes, FString& ErrorMessage);
 	UNCRYPTOOL_API bool Bech32Decode(const FUncryptoolBytes& HRP, const FUncryptoolBytes& InputBytes, TArray<uint8>& OutputBytes, FString& ErrorMessage);
 
+	UNCRYPTOOL_API TArray<uint8> Base64Encode(const FUncryptoolBytes& InputBytes, const bool bPadding);
+
 	/*
 	* Hashing functions
 	*/
@@ -267,7 +269,7 @@ namespace Uncryptool
 	UNCRYPTOOL_API bool DecryptChaCha20(const FUncryptoolBytes& EncryptedBytes, const FUncryptoolBytes& Key, const FUncryptoolBytes& Nonce, TArray<uint8>& OutputBytes, FString& ErrorMessage);
 	UNCRYPTOOL_API bool DecryptChaCha20Salted(const FUncryptoolBytes& EncryptedBytes, const FUncryptoolBytes& Password, const EUncryptoolKeyDerivation KeyDerivation, const int32 Iterations, TArray<uint8>& OutputBytes, FString& ErrorMessage);
 	UNCRYPTOOL_API bool EncryptChaCha20(const FUncryptoolBytes& InputBytes, const FUncryptoolBytes& Key, const FUncryptoolBytes& Nonce, TArray<uint8>& EncryptedBytes, FString& ErrorMessage);
-	UNCRYPTOOL_API bool EncryptChaCha20Poly1305(const FUncryptoolBytes& InputBytes, const FUncryptoolBytes& Key, const FUncryptoolBytes& Nonce, const FUncryptoolBytes& AAD, TArray<uint8>& EncryptedBytes, FString& ErrorMessage);
+	UNCRYPTOOL_API bool EncryptChaCha20Poly1305(const FUncryptoolBytes& InputBytes, const FUncryptoolBytes& Key, const FUncryptoolBytes& Nonce, const FUncryptoolBytes& AAD, TArray<uint8>& EncryptedBytes, TArray<uint8>& Tag, FString& ErrorMessage);
 
 	UNCRYPTOOL_API bool DecryptAES256CTR(const FUncryptoolBytes& EncryptedBytes, const FUncryptoolBytes& Key, const FUncryptoolBytes& Counter, TArray<uint8>& OutputBytes, FString& ErrorMessage);
 
@@ -331,6 +333,7 @@ namespace Uncryptool
 	*/
 
 	UNCRYPTOOL_API bool LoadAgeIdentity(const FUncryptoolBytes& InputBytes, FUncryptoolPrivateKey& PrivateKey, FUncryptoolPublicKey& PublicKey, FString& ErrorMessage);
+	UNCRYPTOOL_API bool EncryptAgeX25519(const FUncryptoolBytes& InputBytes, const TArray<FUncryptoolPublicKey>& PublicKeys, TArray<uint8>& EncryptedBytes, FString& ErrorMessage);
 }
 
 
