@@ -22,4 +22,6 @@ public:
 protected:
 	FString PasswordForKeyDerivation;
 	
+	UPROPERTY()
+	TArray<uint8> EncryptedData;
 };
