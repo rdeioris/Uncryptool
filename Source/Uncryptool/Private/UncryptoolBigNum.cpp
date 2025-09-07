@@ -13,6 +13,49 @@ FUncryptoolBigNum::FUncryptoolBigNum()
 	NativeBigNum = BN_new();
 }
 
+bool FUncryptoolBigNum::FromString(const FString& String)
+{
+	if (!BN_dec2bn(reinterpret_cast<BIGNUM**>(&NativeBigNum), TCHAR_TO_ANSI(*String)))
+	{
+		return false;
+	}
+	return true;
+}
+
+bool FUncryptoolBigNum::FromInt64(const int64 Value)
+{
+	if (Value >= 0)
+	{
+		if (!BN_set_word(reinterpret_cast<BIGNUM*>(NativeBigNum), static_cast<BN_ULONG>(Value)))
+		{
+			return false;
+		}
+	}
+	else
+	{
+		if (!BN_set_word(reinterpret_cast<BIGNUM*>(NativeBigNum), static_cast<BN_ULONG>(-Value)))
+		{
+			return false;
+		}
+		BN_set_negative(reinterpret_cast<BIGNUM*>(NativeBigNum), 1);
+	}
+	return true;
+}
+
+FString FUncryptoolBigNum::ToString() const
+{
+	char* CString = BN_bn2dec(reinterpret_cast<const BIGNUM*>(NativeBigNum));
+	if (!CString)
+	{
+		return "";
+	}
+
+	FString Result = ANSI_TO_TCHAR(CString);
+	OPENSSL_free(CString);
+
+	return Result;
+}
+
 FUncryptoolBigNum::~FUncryptoolBigNum()
 {
 	if (NativeBigNum)

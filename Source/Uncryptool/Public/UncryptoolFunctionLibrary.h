@@ -91,7 +91,7 @@ struct FUncryptoolPublicKey
 };
 
 USTRUCT(BlueprintType)
-struct FUncryptoolBigNum
+struct UNCRYPTOOL_API FUncryptoolBigNum
 {
 	GENERATED_BODY()
 
@@ -101,13 +101,18 @@ struct FUncryptoolBigNum
 	FUncryptoolBigNum& operator=(const FUncryptoolBigNum& Other);
 	FUncryptoolBigNum(FUncryptoolBigNum&& Other);
 
+	bool FromString(const FString& String);
+	bool FromInt64(const int64 Value);
+
+	FString ToString() const;
+
 	void* GetNativeBigNum() const;
 
 protected:
 	void* NativeBigNum = nullptr;
 };
 
-struct FUncryptoolBytes
+struct UNCRYPTOOL_API FUncryptoolBytes
 {
 	FUncryptoolBytes(const char* Chars) : Ptr(reinterpret_cast<const uint8*>(Chars)), Size(FCStringAnsi::Strlen(Chars))
 	{
@@ -153,7 +158,7 @@ namespace Uncryptool
 }
 
 USTRUCT(BlueprintType)
-struct FUncryptoolStructArgument
+struct UNCRYPTOOL_API FUncryptoolStructArgument
 {
 	GENERATED_BODY()
 
@@ -258,7 +263,7 @@ namespace Uncryptool
 	*/
 	bool PBEScrypt(const FUncryptoolBytes& Password, const FUncryptoolBytes& Salt, const uint64 N, const uint64 R, const uint64 P, const int32 KeyLen, TArray<uint8>& OutputBytes, FString& ErrorMessage);
 	bool HKDF(const EUncryptoolHash Hash, const FUncryptoolBytes& Salt, const FUncryptoolBytes& IKM, const FUncryptoolBytes& Info, TArray<uint8>& OutputBytes, FString& ErrorMessage);
-	
+
 
 	/*
 	* Symmetric Encryption functions
@@ -309,7 +314,7 @@ namespace Uncryptool
 	UNCRYPTOOL_API bool PublicKeyToPEM(const FUncryptoolPublicKey& PublicKey, FString& PEMString, FString& ErrorMessage);
 	UNCRYPTOOL_API bool PrivateKeyToRaw(const FUncryptoolPrivateKey& PrivateKey, TArray<uint8>& OutputBytes, FString& ErrorMessage);
 	UNCRYPTOOL_API bool PublicKeyToRaw(const FUncryptoolPublicKey& PublicKey, TArray<uint8>& OutputBytes, FString& ErrorMessage);
-	
+
 
 
 	UNCRYPTOOL_API bool PublicKeyMatchesPrivateKey(const FUncryptoolPublicKey& PublicKey, const FUncryptoolPrivateKey& PrivateKey, FString& ErrorMessage);
