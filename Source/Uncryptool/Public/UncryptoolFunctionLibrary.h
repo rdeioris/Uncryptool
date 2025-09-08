@@ -101,15 +101,50 @@ struct UNCRYPTOOL_API FUncryptoolBigNum
 	FUncryptoolBigNum& operator=(const FUncryptoolBigNum& Other);
 	FUncryptoolBigNum(FUncryptoolBigNum&& Other);
 
-	bool FromString(const FString& String);
-	bool FromInt64(const int64 Value);
+	bool SetString(const FString& String);
+	bool SetInt64(const int64 Value);
+	bool SetRand(const int32 Bits);
+
+	FUncryptoolBigNum Add(const FUncryptoolBigNum& Other) const;
+	FUncryptoolBigNum ModAdd(const FUncryptoolBigNum& Other, const FUncryptoolBigNum& Modulo) const;
+	FUncryptoolBigNum Sub(const FUncryptoolBigNum& Other) const;
+	FUncryptoolBigNum ModSub(const FUncryptoolBigNum& Other, const FUncryptoolBigNum& Modulo) const;
+	FUncryptoolBigNum Mul(const FUncryptoolBigNum& Other) const;
+	FUncryptoolBigNum ModMul(const FUncryptoolBigNum& Other, const FUncryptoolBigNum& Modulo) const;
+	FUncryptoolBigNum Mod(const FUncryptoolBigNum& Other) const;
+	FUncryptoolBigNum Sqr() const;
+	bool Cmp(const FUncryptoolBigNum& Other) const;
+
+	int32 NumBits() const;
+	int32 NumBytes() const;
 
 	FString ToString() const;
 
 	void* GetNativeBigNum() const;
+	void* GetContext() const;
+
+	template<typename T>
+	T* GetNativeBigNum() const
+	{
+		return reinterpret_cast<T*>(GetNativeBigNum());
+	}
+
+	template<typename T>
+	T* GetContext() const
+	{
+		return reinterpret_cast<T*>(GetContext());
+	}
+
+	bool Isvalid() const
+	{
+		return (NativeBigNum != nullptr) && (Context != nullptr);
+	}
+
+
 
 protected:
 	void* NativeBigNum = nullptr;
+	void* Context = nullptr;
 };
 
 struct UNCRYPTOOL_API FUncryptoolBytes
