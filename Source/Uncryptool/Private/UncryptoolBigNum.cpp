@@ -23,6 +23,16 @@ bool FUncryptoolBigNum::SetString(const FString& String)
 	return true;
 }
 
+bool FUncryptoolBigNum::SetHexString(const FString& HexString)
+{
+	TArray<uint8> StringBytes;
+	if (!Uncryptool::HexStringToBytes(HexString, StringBytes))
+	{
+		return false;
+	}
+	return SetString(Uncryptool::BytesToUTF8String(StringBytes));
+}
+
 bool FUncryptoolBigNum::SetInt64(const int64 Value)
 {
 	if (Value >= 0)
@@ -96,6 +106,20 @@ FUncryptoolBigNum FUncryptoolBigNum::ModMul(const FUncryptoolBigNum& Other, cons
 {
 	FUncryptoolBigNum Result;
 	BN_mod_mul(Result.GetNativeBigNum<BIGNUM>(), GetNativeBigNum<BIGNUM>(), Other.GetNativeBigNum<BIGNUM>(), Modulo.GetNativeBigNum<BIGNUM>(), GetContext<BN_CTX>());
+	return Result;
+}
+
+FUncryptoolBigNum FUncryptoolBigNum::Exp(const FUncryptoolBigNum& Other) const
+{
+	FUncryptoolBigNum Result;
+	BN_exp(Result.GetNativeBigNum<BIGNUM>(), GetNativeBigNum<BIGNUM>(), Other.GetNativeBigNum<BIGNUM>(), GetContext<BN_CTX>());
+	return Result;
+}
+
+FUncryptoolBigNum FUncryptoolBigNum::ModExp(const FUncryptoolBigNum& Other, const FUncryptoolBigNum& Modulo) const
+{
+	FUncryptoolBigNum Result;
+	BN_mod_exp(Result.GetNativeBigNum<BIGNUM>(), GetNativeBigNum<BIGNUM>(), Other.GetNativeBigNum<BIGNUM>(), Modulo.GetNativeBigNum<BIGNUM>(), GetContext<BN_CTX>());
 	return Result;
 }
 

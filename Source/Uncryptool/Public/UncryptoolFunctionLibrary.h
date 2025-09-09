@@ -102,6 +102,7 @@ struct UNCRYPTOOL_API FUncryptoolBigNum
 	FUncryptoolBigNum(FUncryptoolBigNum&& Other);
 
 	bool SetString(const FString& String);
+	bool SetHexString(const FString& HexString);
 	bool SetInt64(const int64 Value);
 	bool SetRand(const int32 Bits);
 
@@ -113,10 +114,16 @@ struct UNCRYPTOOL_API FUncryptoolBigNum
 	FUncryptoolBigNum ModMul(const FUncryptoolBigNum& Other, const FUncryptoolBigNum& Modulo) const;
 	FUncryptoolBigNum Mod(const FUncryptoolBigNum& Other) const;
 	FUncryptoolBigNum Sqr() const;
+	FUncryptoolBigNum Exp(const FUncryptoolBigNum& Other) const;
+	FUncryptoolBigNum ModExp(const FUncryptoolBigNum& Other, const FUncryptoolBigNum& Modulo) const;
 	bool Cmp(const FUncryptoolBigNum& Other) const;
 
 	int32 NumBits() const;
 	int32 NumBytes() const;
+
+	bool IsBitSet(const int32 Bit) const;
+	bool SetBit(const int32 Bit);
+	bool ClearBit(const int32 Bit);
 
 	FString ToString() const;
 

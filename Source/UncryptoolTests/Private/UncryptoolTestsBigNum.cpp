@@ -192,4 +192,30 @@ bool FUncryptoolTestsBigNum_NumBits::RunTest(const FString& Parameters)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FUncryptoolTestsBigNum_DiffieHellman, "Uncryptool.FunctionalTests.BigNum.DiffieHellman", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FUncryptoolTestsBigNum_DiffieHellman::RunTest(const FString& Parameters)
+{
+	FUncryptoolBigNum P;
+	P.SetHexString("FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD1");
+
+	FUncryptoolBigNum G;
+	G.SetInt64(2);
+
+	FUncryptoolBigNum AlicePrivateKey;
+	AlicePrivateKey.SetRand(128);
+	const FUncryptoolBigNum AlicePublicKey = G.ModExp(AlicePrivateKey, P);
+
+	FUncryptoolBigNum BobPrivateKey;
+	BobPrivateKey.SetRand(128);
+	const FUncryptoolBigNum BobPublicKey = G.ModExp(BobPrivateKey, P);
+
+	const FUncryptoolBigNum AliceSharedSecret = BobPublicKey.ModExp(AlicePrivateKey, P);
+	const FUncryptoolBigNum BobSharedSecret = AlicePublicKey.ModExp(BobPrivateKey, P);
+
+	TestTrue("IsOnCurve(5, 1, 2, 2, 17) == true", AliceSharedSecret.Cmp(BobSharedSecret));
+
+	return true;
+}
+
 #endif
