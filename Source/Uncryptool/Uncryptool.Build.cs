@@ -52,6 +52,7 @@ public class Uncryptool : ModuleRules
         if (Target.Platform == UnrealTargetPlatform.Win64)
         {
             PublicSystemLibraries.Add("Winscard.lib");
+            PublicSystemLibraries.Add("Crypt32.lib");
         }
 	}
 }

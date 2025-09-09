@@ -381,6 +381,13 @@ namespace Uncryptool
 
 	UNCRYPTOOL_API bool LoadAgeIdentity(const FUncryptoolBytes& InputBytes, FUncryptoolPrivateKey& PrivateKey, FUncryptoolPublicKey& PublicKey, FString& ErrorMessage);
 	UNCRYPTOOL_API bool EncryptAgeX25519(const FUncryptoolBytes& InputBytes, const TArray<FUncryptoolPublicKey>& PublicKeys, TArray<uint8>& EncryptedBytes, FString& ErrorMessage);
+
+	/*
+	* Keychain functions
+	*/
+
+	UNCRYPTOOL_API bool KeychainLoad(const FUncryptoolBytes& InputBytes, TArray<uint8>& OutputBytes, FString& Description, FString& ErrorMessage);
+	UNCRYPTOOL_API bool KeychainStore(const FUncryptoolBytes& InputBytes, TArray<uint8>& OutputBytes, const FString& Description, FString& ErrorMessage);
 }
 
 
