@@ -13,6 +13,89 @@ THIRD_PARTY_INCLUDES_END
 
 namespace Uncryptool
 {
+	bool GenerateKeyFromCustomEllipticCurve(const FUncryptoolEllipticCurve& EllipticCurve, FUncryptoolPrivateKey& PrivateKey, FUncryptoolPublicKey& PublicKey, FString& ErrorMessage)
+	{
+		return false;
+	}
+
+	bool ECPrivateKeyToCustomEllipticCurve(const FUncryptoolPrivateKey& PrivateKey, FUncryptoolEllipticCurve& EllipticCurve, FString& ErrorMessage)
+	{
+		const uint8* DERPtr = PrivateKey.DER.GetData();
+
+		EC_KEY* ECKey = d2i_ECPrivateKey(nullptr, &DERPtr, PrivateKey.DER.Num());
+		if (!ECKey)
+		{
+			ErrorMessage = GetOpenSSLError();
+			return false;
+		}
+
+		const EC_GROUP* Group = EC_KEY_get0_group(ECKey);
+		if (!Group)
+		{
+			ErrorMessage = GetOpenSSLError();
+			EC_KEY_free(ECKey);
+			return false;
+		}
+
+		BN_CTX* Context = BN_CTX_new();
+		if (!Group)
+		{
+			ErrorMessage = GetOpenSSLError();
+			EC_KEY_free(ECKey);
+			return false;
+		}
+
+		BN_CTX_start(Context);
+
+		if (!EC_GROUP_get_curve_GFp(Group, EllipticCurve.P.GetNativeBigNum<BIGNUM>(), EllipticCurve.A.GetNativeBigNum<BIGNUM>(), EllipticCurve.B.GetNativeBigNum<BIGNUM>(), Context))
+		{
+			ErrorMessage = GetOpenSSLError();
+			EC_KEY_free(ECKey);
+			return false;
+		}
+
+		const EC_POINT* G = EC_GROUP_get0_generator(Group);
+		if (!G)
+		{
+			ErrorMessage = GetOpenSSLError();
+			BN_CTX_end(Context);
+			BN_CTX_free(Context);
+			EC_KEY_free(ECKey);
+			return false;
+		}
+
+		if (!EC_POINT_get_affine_coordinates_GFp(Group, G, EllipticCurve.Gx.GetNativeBigNum<BIGNUM>(), EllipticCurve.Gy.GetNativeBigNum<BIGNUM>(), Context))
+		{
+			ErrorMessage = GetOpenSSLError();
+			BN_CTX_end(Context);
+			BN_CTX_free(Context);
+			EC_KEY_free(ECKey);
+			return false;
+		}
+
+		if (!EC_GROUP_get_order(Group, EllipticCurve.Order.GetNativeBigNum<BIGNUM>(), Context))
+		{
+			ErrorMessage = GetOpenSSLError();
+			BN_CTX_end(Context);
+			BN_CTX_free(Context);
+			EC_KEY_free(ECKey);
+			return false;
+		}
+
+		if (!EC_GROUP_get_cofactor(Group, EllipticCurve.Cofactor.GetNativeBigNum<BIGNUM>(), Context))
+		{
+			ErrorMessage = GetOpenSSLError();
+			BN_CTX_end(Context);
+			BN_CTX_free(Context);
+			EC_KEY_free(ECKey);
+			return false;
+		}
+
+		BN_CTX_end(Context);
+		BN_CTX_free(Context);
+		EC_KEY_free(ECKey);
+		return true;
+	}
 
 	bool GenerateECKey(const EUncryptoolEllipticCurve EllipticCurve, FUncryptoolPrivateKey& PrivateKey, FUncryptoolPublicKey& PublicKey, FString& ErrorMessage)
 	{

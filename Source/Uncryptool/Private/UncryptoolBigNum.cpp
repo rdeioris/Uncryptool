@@ -166,6 +166,20 @@ FString FUncryptoolBigNum::ToString() const
 	return Result;
 }
 
+FString FUncryptoolBigNum::ToHexString() const
+{
+	char* CString = BN_bn2hex(reinterpret_cast<const BIGNUM*>(NativeBigNum));
+	if (!CString)
+	{
+		return "";
+	}
+
+	FString Result = ANSI_TO_TCHAR(CString);
+	OPENSSL_free(CString);
+
+	return Result;
+}
+
 FUncryptoolBigNum::~FUncryptoolBigNum()
 {
 	if (Context)

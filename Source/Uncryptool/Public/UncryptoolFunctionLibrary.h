@@ -63,7 +63,7 @@ enum class EUncryptoolCipher : uint8
 };
 
 USTRUCT(BlueprintType)
-struct FUncryptoolPrivateKey
+struct UNCRYPTOOL_API FUncryptoolPrivateKey
 {
 	GENERATED_BODY()
 
@@ -77,7 +77,7 @@ struct FUncryptoolPrivateKey
 };
 
 USTRUCT(BlueprintType)
-struct FUncryptoolPublicKey
+struct UNCRYPTOOL_API FUncryptoolPublicKey
 {
 	GENERATED_BODY()
 
@@ -126,6 +126,7 @@ struct UNCRYPTOOL_API FUncryptoolBigNum
 	bool ClearBit(const int32 Bit);
 
 	FString ToString() const;
+	FString ToHexString() const;
 
 	void* GetNativeBigNum() const;
 	void* GetContext() const;
@@ -152,6 +153,33 @@ struct UNCRYPTOOL_API FUncryptoolBigNum
 protected:
 	void* NativeBigNum = nullptr;
 	void* Context = nullptr;
+};
+
+USTRUCT(BlueprintType)
+struct UNCRYPTOOL_API FUncryptoolEllipticCurve
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Uncryptool")
+	FUncryptoolBigNum P;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Uncryptool")
+	FUncryptoolBigNum A;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Uncryptool")
+	FUncryptoolBigNum B;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Uncryptool")
+	FUncryptoolBigNum Gx;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Uncryptool")
+	FUncryptoolBigNum Gy;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Uncryptool")
+	FUncryptoolBigNum Order;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Uncryptool")
+	FUncryptoolBigNum Cofactor;
 };
 
 struct UNCRYPTOOL_API FUncryptoolBytes
@@ -334,6 +362,9 @@ namespace Uncryptool
 	UNCRYPTOOL_API bool ECDSADigestVerify(const FUncryptoolPublicKey& PublicKey, const FUncryptoolBytes& InputBytes, const EUncryptoolHash Hash, const FUncryptoolBytes& SignatureBytes, FString& ErrorMessage);
 	UNCRYPTOOL_API bool ECDH(const FUncryptoolPrivateKey& PrivateKey, const FUncryptoolPublicKey& PublicKey, TArray<uint8>& OutputSharedSecret, FString& ErrorMessage);
 
+	UNCRYPTOOL_API bool GenerateKeyFromCustomEllipticCurve(const FUncryptoolEllipticCurve& EllipticCurve, FUncryptoolPrivateKey& PrivateKey, FUncryptoolPublicKey& PublicKey, FString& ErrorMessage);
+	UNCRYPTOOL_API bool ECPrivateKeyToCustomEllipticCurve(const FUncryptoolPrivateKey& PrivateKey, FUncryptoolEllipticCurve& EllipticCurve, FString& ErrorMessage);
+
 	/*
 	* RSA
 	*/
@@ -356,8 +387,6 @@ namespace Uncryptool
 	UNCRYPTOOL_API bool PublicKeyToPEM(const FUncryptoolPublicKey& PublicKey, FString& PEMString, FString& ErrorMessage);
 	UNCRYPTOOL_API bool PrivateKeyToRaw(const FUncryptoolPrivateKey& PrivateKey, TArray<uint8>& OutputBytes, FString& ErrorMessage);
 	UNCRYPTOOL_API bool PublicKeyToRaw(const FUncryptoolPublicKey& PublicKey, TArray<uint8>& OutputBytes, FString& ErrorMessage);
-
-
 
 	UNCRYPTOOL_API bool PublicKeyMatchesPrivateKey(const FUncryptoolPublicKey& PublicKey, const FUncryptoolPrivateKey& PrivateKey, FString& ErrorMessage);
 	UNCRYPTOOL_API bool PublicKeyFromPrivateKey(const FUncryptoolPrivateKey& PrivateKey, FUncryptoolPublicKey& PublicKey, FString& ErrorMessage);

@@ -37,6 +37,7 @@ public class UncryptoolTests : ModuleRules
 				"CoreUObject",
 				"Engine",
 				"Uncryptool",
+                "Projects"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

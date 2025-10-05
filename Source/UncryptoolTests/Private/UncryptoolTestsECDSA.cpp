@@ -122,4 +122,34 @@ bool FUncryptoolTestsECDSA_SignHash::RunTest(const FString& Parameters)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FUncryptoolTestsECDSA_ToCustomEllipticCurve, "Uncryptool.UnitTests.ECDSA.ToCustomEllipticCurve", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FUncryptoolTestsECDSA_ToCustomEllipticCurve::RunTest(const FString& Parameters)
+{
+	FUncryptoolPrivateKey PrivateKey;
+	FUncryptoolPublicKey PublicKey;
+	FString ErrorMessage;
+
+	bool bSuccess = Uncryptool::GenerateECKey(EUncryptoolEllipticCurve::SECP256K1, PrivateKey, PublicKey, ErrorMessage);
+	TestTrue("bSuccess == true", bSuccess);
+	TestEqual("PrivateKey.Bits == 256", PrivateKey.Bits, 256);
+	TestEqual("PublicKey.Bits == 256", PublicKey.Bits, 256);
+
+	FUncryptoolEllipticCurve EllipticCurve;
+	bSuccess = Uncryptool::ECPrivateKeyToCustomEllipticCurve(PrivateKey, EllipticCurve, ErrorMessage);
+	TestTrue("bSuccess == true", bSuccess);
+
+	TestEqual("EllipticCurve.P == 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F", EllipticCurve.P.ToHexString(), "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F");
+	TestEqual("EllipticCurve.A == 0x0", EllipticCurve.A.ToHexString(), "0");
+	TestEqual("EllipticCurve.B == 0x07", EllipticCurve.B.ToHexString(), "07");
+
+	TestEqual("EllipticCurve.Gx == 0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798", EllipticCurve.Gx.ToHexString(), "79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798");
+	TestEqual("EllipticCurve.Gy == 0x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8", EllipticCurve.Gy.ToHexString(), "483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8");
+
+	TestEqual("EllipticCurve.Order == 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141", EllipticCurve.Order.ToHexString(), "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141");
+	TestEqual("EllipticCurve.Cofactor == 0x01", EllipticCurve.Cofactor.ToHexString(), "01");
+
+	return true;
+}
+
 #endif
