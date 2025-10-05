@@ -61,14 +61,14 @@ bool FUncryptoolTestsECDSA_SignAndVerify::RunTest(const FString& Parameters)
 	TArray<uint8> Signature;
 	bSuccess = Uncryptool::ECDSADigestSign(PrivateKey, { 1,2,3 }, EUncryptoolHash::SHA256, Signature, ErrorMessage);
 	TestTrue("bSuccess == true", bSuccess);
-	TestTrue("Signature.Num() > 64", Signature.Num() > 64);
+	TestEqual("Signature.Num() == 64", Signature.Num(), 64);
 
 	bSuccess = Uncryptool::ECDSADigestVerify(PublicKey, { 1,2,3 }, EUncryptoolHash::SHA256, Signature, ErrorMessage);
 	TestTrue("bSuccess == true", bSuccess);
 
 	bSuccess = Uncryptool::ECDSADigestSign(PrivateKey, "Hello World", EUncryptoolHash::SHA256, Signature, ErrorMessage);
 	TestTrue("bSuccess == true", bSuccess);
-	TestTrue("Signature.Num() > 64", Signature.Num() > 64);
+	TestEqual("Signature.Num() == 64", Signature.Num(), 64);
 
 	bSuccess = Uncryptool::ECDSADigestVerify(PublicKey, "Hello World", EUncryptoolHash::SHA256, Signature, ErrorMessage);
 	TestTrue("bSuccess == true", bSuccess);
@@ -92,26 +92,26 @@ bool FUncryptoolTestsECDSA_SignHash::RunTest(const FString& Parameters)
 	TArray<uint8> Signature;
 	bSuccess = Uncryptool::ECDSADigestSign(PrivateKey, "Hello World", EUncryptoolHash::SHA256, Signature, ErrorMessage);
 	TestTrue("bSuccess == true", bSuccess);
-	TestTrue("Signature.Num() > 64", Signature.Num() > 64);
+	TestEqual("Signature.Num() == 64", Signature.Num(), 64);
 
 	bSuccess = Uncryptool::ECDSADigestSign(PrivateKey, "Hello World", EUncryptoolHash::SHA512, Signature, ErrorMessage);
 	TestTrue("bSuccess == true", bSuccess);
-	TestTrue("Signature.Num() > 64", Signature.Num() > 64);
+	TestEqual("Signature.Num() == 128", Signature.Num(), 128);
 
 	bSuccess = Uncryptool::ECDSADigestSign(PrivateKey, "Hello World", EUncryptoolHash::SHA384, Signature, ErrorMessage);
 	TestTrue("bSuccess == true", bSuccess);
-	TestTrue("Signature.Num() > 64", Signature.Num() > 64);
+	TestEqual("Signature.Num() == 96", Signature.Num(), 96);
 
 	bSuccess = Uncryptool::ECDSADigestSign(PrivateKey, "Hello World", EUncryptoolHash::RIPEMD160, Signature, ErrorMessage);
 	TestFalse("bSuccess == false", bSuccess);
 
 	bSuccess = Uncryptool::ECDSADigestSign(PrivateKey, "Hello World", EUncryptoolHash::SHA1, Signature, ErrorMessage);
 	TestTrue("bSuccess == true", bSuccess);
-	TestTrue("Signature.Num() > 64", Signature.Num() > 64);
+	TestEqual("Signature.Num() == 40", Signature.Num(), 40);
 
 	bSuccess = Uncryptool::ECDSADigestSign(PrivateKey, "Hello World", EUncryptoolHash::SHA224, Signature, ErrorMessage);
 	TestTrue("bSuccess == true", bSuccess);
-	TestTrue("Signature.Num() > 64", Signature.Num() > 64);
+	TestEqual("Signature.Num() == 56", Signature.Num(), 56);
 
 	bSuccess = Uncryptool::ECDSADigestSign(PrivateKey, "Hello World", EUncryptoolHash::BLAKE2b512, Signature, ErrorMessage);
 	TestFalse("bSuccess == false", bSuccess);
@@ -178,8 +178,45 @@ bool FUncryptoolTestsECDSA_ToyEllipticCurve::RunTest(const FString& Parameters)
 	bSuccess = Uncryptool::ECPublicKeyToCustomEllipticCurve(PublicKey, EllipticCurve, Qx, Qy, ErrorMessage);
 	TestTrue("bSuccess == true", bSuccess);
 
-	TestEqual("Qx == 0x0F65E41E2D64B7C768F0747F19C3E8A3040F3C6E0AD25B3445D25E7F6C7DA8B2", Qx.ToHexString(), "E963FFDFE34E63B68AEB42A5826E08AF087660E0DAC1C3E79F7625CA4E6AE482");
-	TestEqual("Qy == 0x83ADCEB5D46A3B893B6291A516E53F2A6786F0E2E1F2437C8996F443E58B4812", Qy.ToHexString(), "2A78E81B57D80C4C65C94692FA281D1A1A8875F9874C197E71A52C11D9D44C40");
+	TestEqual("Qx == 0xE963FFDFE34E63B68AEB42A5826E08AF087660E0DAC1C3E79F7625CA4E6AE482", Qx.ToHexString(), "E963FFDFE34E63B68AEB42A5826E08AF087660E0DAC1C3E79F7625CA4E6AE482");
+	TestEqual("Qy == 0x2A78E81B57D80C4C65C94692FA281D1A1A8875F9874C197E71A52C11D9D44C40", Qy.ToHexString(), "2A78E81B57D80C4C65C94692FA281D1A1A8875F9874C197E71A52C11D9D44C40");
+
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FUncryptoolTestsECDSA_ToySignAndVerify, "Uncryptool.UnitTests.ECDSA.ToySignAndVerify", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FUncryptoolTestsECDSA_ToySignAndVerify::RunTest(const FString& Parameters)
+{
+	FUncryptoolPrivateKey PrivateKey;
+	FUncryptoolPublicKey PublicKey;
+	FString ErrorMessage;
+
+	FUncryptoolBigNum D;
+	D.SetHexString("0x12345");
+
+	bool bSuccess = Uncryptool::ECPrivateKeyFromBigNum(EUncryptoolEllipticCurve::SECP256K1, D, PrivateKey, ErrorMessage);
+	TestTrue("bSuccess == true", bSuccess);
+	TestEqual("PrivateKey.Bits == 256", PrivateKey.Bits, 256);
+
+	bSuccess = Uncryptool::PublicKeyFromPrivateKey(PrivateKey, PublicKey, ErrorMessage);
+	TestTrue("bSuccess == true", bSuccess);
+	TestEqual("PublicKey.Bits == 256", PublicKey.Bits, 256);
+
+	TArray<uint8> Signature;
+	bSuccess = Uncryptool::ECDSADigestSign(PrivateKey, "Hello World", EUncryptoolHash::SHA256, Signature, ErrorMessage);
+	TestTrue("bSuccess == true", bSuccess);
+	TestEqual("Signature.Num() == 64", Signature.Num(), 64);
+
+	bSuccess = Uncryptool::ECDSADigestVerify(PublicKey, "Hello World", EUncryptoolHash::SHA256, Signature, ErrorMessage);
+	TestTrue("bSuccess == true", bSuccess);
+
+	// TODO manage recoverable
+#if 0
+	TestEqual("Signature == 0xdfc0804599388b4d5a9f608c00a5e2dad20c49d5761b57cec494aa2ef88c4d6f4613d9b2b29939621136328678cb3c5eceb390a2017d978ba6424038f3abf83301",
+		Uncryptool::BytesToHexString(Signature),
+		"dfc0804599388b4d5a9f608c00a5e2dad20c49d5761b57cec494aa2ef88c4d6f4613d9b2b29939621136328678cb3c5eceb390a2017d978ba6424038f3abf83301");
+#endif
 
 	return true;
 }

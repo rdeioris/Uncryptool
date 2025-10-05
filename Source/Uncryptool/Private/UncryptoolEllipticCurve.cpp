@@ -543,9 +543,10 @@ namespace Uncryptool
 			return false;
 		}
 
-		OutputSignature.SetNum(SignatureLen, EAllowShrinking::No);
+		TArray<uint8> DerSignature;
+		DerSignature.SetNum(SignatureLen, EAllowShrinking::No);
 
-		if (EVP_DigestSignFinal(Context, OutputSignature.GetData(), &SignatureLen) <= 0)
+		if (EVP_DigestSignFinal(Context, DerSignature.GetData(), &SignatureLen) <= 0)
 		{
 			ErrorMessage = GetOpenSSLError();
 			EVP_MD_CTX_free(Context);
@@ -553,8 +554,35 @@ namespace Uncryptool
 			return false;
 		}
 
-		// the first call to EVP_DigestSignFinal returned the max size of a signature (not the actual size)
-		OutputSignature.SetNum(SignatureLen, EAllowShrinking::No);
+		const uint8* DerPtr = DerSignature.GetData();
+
+		// Note: the first call to EVP_DigestSignFinal returned the max size of a signature (not the actual size)
+		ECDSA_SIG* RawSignature = d2i_ECDSA_SIG(nullptr, &DerPtr, SignatureLen);
+		if (!RawSignature)
+		{
+			ErrorMessage = GetOpenSSLError();
+			EVP_MD_CTX_free(Context);
+			EVP_PKEY_free(EVPPrivateKey);
+			return false;
+		}
+
+		FUncryptoolBigNum R;
+		FUncryptoolBigNum S;
+
+		const BIGNUM* RPtr;
+		const BIGNUM* SPtr;
+		ECDSA_SIG_get0(RawSignature, &RPtr, &SPtr);
+
+		BN_copy(R.GetNativeBigNum<BIGNUM>(), RPtr);
+		BN_copy(S.GetNativeBigNum<BIGNUM>(), SPtr);
+
+		const int32 HashSize = EVP_MD_size(HashAlgo);
+
+		OutputSignature.Empty();
+		OutputSignature.Append(R.ToBytes(HashSize));
+		OutputSignature.Append(S.ToBytes(HashSize));
+
+		ECDSA_SIG_free(RawSignature);
 
 		EVP_MD_CTX_free(Context);
 		EVP_PKEY_free(EVPPrivateKey);
@@ -620,14 +648,39 @@ namespace Uncryptool
 			return false;
 		}
 
-		if (EVP_DigestVerifyFinal(Context, SignatureBytes.GetData(), SignatureBytes.Num()) <= 0)
+		FUncryptoolBigNum R;
+		FUncryptoolBigNum S;
+
+		const int32 HashSize = EVP_MD_size(HashAlgo);
+
+		R.SetBytes(SignatureBytes.GetData(), HashSize);
+		S.SetBytes(SignatureBytes.GetData() + HashSize, HashSize);
+
+		ECDSA_SIG* DerSignature = ECDSA_SIG_new();
+		if (!ECDSA_SIG_set0(DerSignature, R.GetNativeBigNum<BIGNUM>(), S.GetNativeBigNum<BIGNUM>()))
 		{
 			ErrorMessage = GetOpenSSLError();
+			ECDSA_SIG_free(DerSignature);
 			EVP_MD_CTX_free(Context);
 			EVP_PKEY_free(EVPPublicKey);
 			return false;
 		}
 
+		uint8* DerPtr = nullptr;
+		const int32 DerLen = i2d_ECDSA_SIG(DerSignature, &DerPtr);
+
+		if (EVP_DigestVerifyFinal(Context, DerPtr, DerLen) <= 0)
+		{
+			ErrorMessage = GetOpenSSLError();
+			OPENSSL_free(DerPtr);
+			ECDSA_SIG_free(DerSignature);
+			EVP_MD_CTX_free(Context);
+			EVP_PKEY_free(EVPPublicKey);
+			return false;
+		}
+
+		OPENSSL_free(DerPtr);
+		ECDSA_SIG_free(DerSignature);
 		EVP_MD_CTX_free(Context);
 		EVP_PKEY_free(EVPPublicKey);
 

@@ -80,7 +80,7 @@ bool FUncryptoolTestsRSA_SignAndVerify::RunTest(const FString& Parameters)
 	TestTrue("bSuccess == true", bSuccess);
 	TestTrue("Signature.Num() > 64", Signature.Num() > 64);
 
-	bSuccess = Uncryptool::ECDSADigestVerify(PublicKey, "Hello World", EUncryptoolHash::SHA256, Signature, ErrorMessage);
+	bSuccess = Uncryptool::RSADigestVerify(PublicKey, "Hello World", EUncryptoolHash::SHA256, Signature, ErrorMessage);
 	TestTrue("bSuccess == true", bSuccess);
 
 	return true;
