@@ -23,14 +23,28 @@ bool FUncryptoolBigNum::SetString(const FString& String)
 	return true;
 }
 
-bool FUncryptoolBigNum::SetHexString(const FString& HexString)
+bool FUncryptoolBigNum::SetBytes(const uint8* Ptr, const int32 Num)
 {
-	TArray<uint8> StringBytes;
-	if (!Uncryptool::HexStringToBytes(HexString, StringBytes))
+	if (!BN_bin2bn(Ptr, Num, GetNativeBigNum<BIGNUM>()))
 	{
 		return false;
 	}
-	return SetString(Uncryptool::BytesToUTF8String(StringBytes));
+	return true;
+}
+
+bool FUncryptoolBigNum::SetBytes(const TArray<uint8>& Bytes)
+{
+	return SetBytes(Bytes.GetData(), Bytes.Num());
+}
+
+bool FUncryptoolBigNum::SetHexString(const FString& HexString)
+{
+	TArray<uint8> Bytes;
+	if (!Uncryptool::HexStringToBytes(HexString, Bytes))
+	{
+		return false;
+	}
+	return SetBytes(Bytes);
 }
 
 bool FUncryptoolBigNum::SetInt64(const int64 Value)
@@ -162,6 +176,20 @@ FString FUncryptoolBigNum::ToString() const
 
 	FString Result = ANSI_TO_TCHAR(CString);
 	OPENSSL_free(CString);
+
+	return Result;
+}
+
+TArray<uint8> FUncryptoolBigNum::ToBytes(const int32 Num) const
+{
+	TArray<uint8> Result;
+	Result.SetNumZeroed(Num, EAllowShrinking::No);
+
+	const int32 RequiredBytes = NumBytes();
+	if (RequiredBytes <= Num)
+	{
+		BN_bn2bin(GetNativeBigNum<BIGNUM>(), Result.GetData() + Num - RequiredBytes);
+	}
 
 	return Result;
 }

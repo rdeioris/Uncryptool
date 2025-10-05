@@ -88,6 +88,23 @@ namespace Uncryptool
 
 		CleanHexString = CleanHexString.ToLower().Replace(TEXT("0x"), TEXT(""));
 
+		int32 SymbolsCounter = 0;
+		for (TCHAR Char : CleanHexString)
+		{
+			if (FChar::IsWhitespace(Char))
+			{
+				continue;
+			}
+
+			SymbolsCounter += 1;
+		}
+
+		// leading '0'
+		if ((SymbolsCounter % 2) != 0)
+		{
+			CleanHexString = "0" + CleanHexString;
+		}
+
 		uint8 CurrentValue = 0;
 		bool bFirst = true;
 		for (TCHAR Char : CleanHexString)

@@ -136,7 +136,8 @@ bool FUncryptoolTestsECDSA_ToCustomEllipticCurve::RunTest(const FString& Paramet
 	TestEqual("PublicKey.Bits == 256", PublicKey.Bits, 256);
 
 	FUncryptoolEllipticCurve EllipticCurve;
-	bSuccess = Uncryptool::ECPrivateKeyToCustomEllipticCurve(PrivateKey, EllipticCurve, ErrorMessage);
+	FUncryptoolBigNum D;
+	bSuccess = Uncryptool::ECPrivateKeyToCustomEllipticCurve(PrivateKey, EllipticCurve, D, ErrorMessage);
 	TestTrue("bSuccess == true", bSuccess);
 
 	TestEqual("EllipticCurve.P == 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F", EllipticCurve.P.ToHexString(), "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F");
@@ -148,6 +149,37 @@ bool FUncryptoolTestsECDSA_ToCustomEllipticCurve::RunTest(const FString& Paramet
 
 	TestEqual("EllipticCurve.Order == 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141", EllipticCurve.Order.ToHexString(), "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141");
 	TestEqual("EllipticCurve.Cofactor == 0x01", EllipticCurve.Cofactor.ToHexString(), "01");
+
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FUncryptoolTestsECDSA_ToyEllipticCurve, "Uncryptool.UnitTests.ECDSA.ToyEllipticCurve", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FUncryptoolTestsECDSA_ToyEllipticCurve::RunTest(const FString& Parameters)
+{
+	FUncryptoolPrivateKey PrivateKey;
+	FUncryptoolPublicKey PublicKey;
+	FString ErrorMessage;
+
+	FUncryptoolBigNum D;
+	D.SetHexString("0x12345");
+
+	bool bSuccess = Uncryptool::ECPrivateKeyFromBigNum(EUncryptoolEllipticCurve::SECP256K1, D, PrivateKey, ErrorMessage);
+	TestTrue("bSuccess == true", bSuccess);
+	TestEqual("PrivateKey.Bits == 256", PrivateKey.Bits, 256);
+
+	bSuccess = Uncryptool::PublicKeyFromPrivateKey(PrivateKey, PublicKey, ErrorMessage);
+	TestTrue("bSuccess == true", bSuccess);
+	TestEqual("PublicKey.Bits == 256", PublicKey.Bits, 256);
+
+	FUncryptoolEllipticCurve EllipticCurve;
+	FUncryptoolBigNum Qx;
+	FUncryptoolBigNum Qy;
+	bSuccess = Uncryptool::ECPublicKeyToCustomEllipticCurve(PublicKey, EllipticCurve, Qx, Qy, ErrorMessage);
+	TestTrue("bSuccess == true", bSuccess);
+
+	TestEqual("Qx == 0x0F65E41E2D64B7C768F0747F19C3E8A3040F3C6E0AD25B3445D25E7F6C7DA8B2", Qx.ToHexString(), "E963FFDFE34E63B68AEB42A5826E08AF087660E0DAC1C3E79F7625CA4E6AE482");
+	TestEqual("Qy == 0x83ADCEB5D46A3B893B6291A516E53F2A6786F0E2E1F2437C8996F443E58B4812", Qy.ToHexString(), "2A78E81B57D80C4C65C94692FA281D1A1A8875F9874C197E71A52C11D9D44C40");
 
 	return true;
 }

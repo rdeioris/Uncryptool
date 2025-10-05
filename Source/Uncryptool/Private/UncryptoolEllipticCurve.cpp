@@ -18,7 +18,7 @@ namespace Uncryptool
 		return false;
 	}
 
-	bool ECPrivateKeyToCustomEllipticCurve(const FUncryptoolPrivateKey& PrivateKey, FUncryptoolEllipticCurve& EllipticCurve, FString& ErrorMessage)
+	bool ECPrivateKeyToCustomEllipticCurve(const FUncryptoolPrivateKey& PrivateKey, FUncryptoolEllipticCurve& EllipticCurve, FUncryptoolBigNum& D, FString& ErrorMessage)
 	{
 		const uint8* DERPtr = PrivateKey.DER.GetData();
 
@@ -45,7 +45,86 @@ namespace Uncryptool
 			return false;
 		}
 
-		BN_CTX_start(Context);
+		if (!EC_GROUP_get_curve_GFp(Group, EllipticCurve.P.GetNativeBigNum<BIGNUM>(), EllipticCurve.A.GetNativeBigNum<BIGNUM>(), EllipticCurve.B.GetNativeBigNum<BIGNUM>(), Context))
+		{
+			ErrorMessage = GetOpenSSLError();
+			EC_KEY_free(ECKey);
+			return false;
+		}
+
+		const EC_POINT* G = EC_GROUP_get0_generator(Group);
+		if (!G)
+		{
+			ErrorMessage = GetOpenSSLError();
+			BN_CTX_free(Context);
+			EC_KEY_free(ECKey);
+			return false;
+		}
+
+		if (!EC_POINT_get_affine_coordinates_GFp(Group, G, EllipticCurve.Gx.GetNativeBigNum<BIGNUM>(), EllipticCurve.Gy.GetNativeBigNum<BIGNUM>(), Context))
+		{
+			ErrorMessage = GetOpenSSLError();
+			BN_CTX_free(Context);
+			EC_KEY_free(ECKey);
+			return false;
+		}
+
+		if (!EC_GROUP_get_order(Group, EllipticCurve.Order.GetNativeBigNum<BIGNUM>(), Context))
+		{
+			ErrorMessage = GetOpenSSLError();
+			BN_CTX_free(Context);
+			EC_KEY_free(ECKey);
+			return false;
+		}
+
+		if (!EC_GROUP_get_cofactor(Group, EllipticCurve.Cofactor.GetNativeBigNum<BIGNUM>(), Context))
+		{
+			ErrorMessage = GetOpenSSLError();
+			BN_CTX_free(Context);
+			EC_KEY_free(ECKey);
+			return false;
+		}
+
+		const BIGNUM* PrivateBigNum = EC_KEY_get0_private_key(ECKey);
+		if (!PrivateBigNum)
+		{
+			BN_CTX_free(Context);
+			EC_KEY_free(ECKey);
+		}
+
+		BN_copy(D.GetNativeBigNum<BIGNUM>(), PrivateBigNum);
+
+		BN_CTX_free(Context);
+		EC_KEY_free(ECKey);
+		return true;
+	}
+
+	bool ECPublicKeyToCustomEllipticCurve(const FUncryptoolPublicKey& PublicKey, FUncryptoolEllipticCurve& EllipticCurve, FUncryptoolBigNum& Qx, FUncryptoolBigNum& Qy, FString& ErrorMessage)
+	{
+		const uint8* DERPtr = PublicKey.DER.GetData();
+
+		EC_KEY* ECKey = d2i_EC_PUBKEY(nullptr, &DERPtr, PublicKey.DER.Num());
+		if (!ECKey)
+		{
+			ErrorMessage = GetOpenSSLError();
+			return false;
+		}
+
+		const EC_GROUP* Group = EC_KEY_get0_group(ECKey);
+		if (!Group)
+		{
+			ErrorMessage = GetOpenSSLError();
+			EC_KEY_free(ECKey);
+			return false;
+		}
+
+		BN_CTX* Context = BN_CTX_new();
+		if (!Group)
+		{
+			ErrorMessage = GetOpenSSLError();
+			EC_KEY_free(ECKey);
+			return false;
+		}
 
 		if (!EC_GROUP_get_curve_GFp(Group, EllipticCurve.P.GetNativeBigNum<BIGNUM>(), EllipticCurve.A.GetNativeBigNum<BIGNUM>(), EllipticCurve.B.GetNativeBigNum<BIGNUM>(), Context))
 		{
@@ -58,7 +137,6 @@ namespace Uncryptool
 		if (!G)
 		{
 			ErrorMessage = GetOpenSSLError();
-			BN_CTX_end(Context);
 			BN_CTX_free(Context);
 			EC_KEY_free(ECKey);
 			return false;
@@ -67,7 +145,6 @@ namespace Uncryptool
 		if (!EC_POINT_get_affine_coordinates_GFp(Group, G, EllipticCurve.Gx.GetNativeBigNum<BIGNUM>(), EllipticCurve.Gy.GetNativeBigNum<BIGNUM>(), Context))
 		{
 			ErrorMessage = GetOpenSSLError();
-			BN_CTX_end(Context);
 			BN_CTX_free(Context);
 			EC_KEY_free(ECKey);
 			return false;
@@ -76,7 +153,6 @@ namespace Uncryptool
 		if (!EC_GROUP_get_order(Group, EllipticCurve.Order.GetNativeBigNum<BIGNUM>(), Context))
 		{
 			ErrorMessage = GetOpenSSLError();
-			BN_CTX_end(Context);
 			BN_CTX_free(Context);
 			EC_KEY_free(ECKey);
 			return false;
@@ -85,13 +161,26 @@ namespace Uncryptool
 		if (!EC_GROUP_get_cofactor(Group, EllipticCurve.Cofactor.GetNativeBigNum<BIGNUM>(), Context))
 		{
 			ErrorMessage = GetOpenSSLError();
-			BN_CTX_end(Context);
 			BN_CTX_free(Context);
 			EC_KEY_free(ECKey);
 			return false;
 		}
 
-		BN_CTX_end(Context);
+		const EC_POINT* PublicPoint = EC_KEY_get0_public_key(ECKey);
+		if (!PublicPoint)
+		{
+			BN_CTX_free(Context);
+			EC_KEY_free(ECKey);
+		}
+
+		if (!EC_POINT_get_affine_coordinates_GFp(Group, PublicPoint, Qx.GetNativeBigNum<BIGNUM>(), Qy.GetNativeBigNum<BIGNUM>(), Context))
+		{
+			ErrorMessage = GetOpenSSLError();
+			BN_CTX_free(Context);
+			EC_KEY_free(ECKey);
+			return false;
+		}
+
 		BN_CTX_free(Context);
 		EC_KEY_free(ECKey);
 		return true;
@@ -206,6 +295,55 @@ namespace Uncryptool
 		return true;
 	}
 
+	bool ECPrivateKeyFromBigNum(const EUncryptoolEllipticCurve EllipticCurve, const FUncryptoolBigNum& BigNum, FUncryptoolPrivateKey& PrivateKey, FString& ErrorMessage)
+	{
+		int32 Nid = -1;
+		switch (EllipticCurve)
+		{
+		case EUncryptoolEllipticCurve::PRIME256V1:
+			Nid = NID_X9_62_prime256v1;
+			break;
+		case EUncryptoolEllipticCurve::SECP256K1:
+			Nid = NID_secp256k1;
+			break;
+		case EUncryptoolEllipticCurve::SECP384R1:
+			Nid = NID_secp384r1;
+			break;
+		case EUncryptoolEllipticCurve::SECP521R1:
+			Nid = NID_secp521r1;
+			break;
+		case EUncryptoolEllipticCurve::X25519:
+			Nid = NID_X25519;
+			break;
+		default:
+			ErrorMessage = "Unknown Elliptic Curve";
+			return false;
+		}
+
+		EC_GROUP* Group = EC_GROUP_new_by_curve_name(Nid);
+		if (!Group)
+		{
+			ErrorMessage = GetOpenSSLError();
+			return false;
+		}
+
+		BIGNUM* Order = BN_new();
+
+		if (!EC_GROUP_get_order(Group, Order, nullptr))
+		{
+			ErrorMessage = GetOpenSSLError();
+			EC_GROUP_free(Group);
+			return false;
+		}
+
+		const int32 Bits = BN_num_bits(Order);
+		BN_free(Order);
+
+		const TArray<uint8> PrivateValue = BigNum.ToBytes((Bits + 7) / 8);
+
+		return ECPrivateKeyFromRaw(EllipticCurve, PrivateValue, PrivateKey, ErrorMessage);
+	}
+
 	bool ECPrivateKeyFromRaw(const EUncryptoolEllipticCurve EllipticCurve, const FUncryptoolBytes& InputBytes, FUncryptoolPrivateKey& PrivateKey, FString& ErrorMessage)
 	{
 		int32 Nid = -1;
@@ -231,7 +369,63 @@ namespace Uncryptool
 			return false;
 		}
 
-		EVP_PKEY* EVPKey = EVP_PKEY_new_raw_private_key(Nid == NID_X25519 ? EVP_PKEY_X25519 : EVP_PKEY_EC, nullptr, InputBytes.GetData(), InputBytes.Num());
+		EVP_PKEY* EVPKey = nullptr;
+
+		if (Nid == NID_X25519)
+		{
+			EVPKey = EVP_PKEY_new_raw_private_key(EVP_PKEY_X25519, nullptr, InputBytes.GetData(), InputBytes.Num());
+		}
+		else
+		{
+			EC_KEY* ECKey = EC_KEY_new_by_curve_name(Nid);
+			if (!ECKey)
+			{
+				ErrorMessage = GetOpenSSLError();
+				return false;
+			}
+
+			FUncryptoolBigNum PrivateValue;
+			PrivateValue.SetBytes(InputBytes.GetData(), InputBytes.Num());
+
+			if (!EC_KEY_set_private_key(ECKey, PrivateValue.GetNativeBigNum<BIGNUM>()))
+			{
+				ErrorMessage = GetOpenSSLError();
+				EC_KEY_free(ECKey);
+				return false;
+			}
+
+			const EC_GROUP* Group = EC_KEY_get0_group(ECKey);
+			EC_POINT* PublicPoint = EC_POINT_new(Group);
+			if (!EC_POINT_mul(Group, PublicPoint, PrivateValue.GetNativeBigNum<BIGNUM>(), nullptr, nullptr, nullptr))
+			{
+				ErrorMessage = GetOpenSSLError();
+				EC_POINT_free(PublicPoint);
+				EC_KEY_free(ECKey);
+				return false;
+			}
+			EC_KEY_set_public_key(ECKey, PublicPoint);
+
+			EC_POINT_free(PublicPoint);
+
+			if (!EC_KEY_check_key(ECKey))
+			{
+				ErrorMessage = GetOpenSSLError();
+				EC_KEY_free(ECKey);
+				return false;
+			}
+
+			EVPKey = EVP_PKEY_new();
+			if (EVPKey)
+			{
+				if (EVP_PKEY_assign_EC_KEY(EVPKey, ECKey) <= 0)
+				{
+					ErrorMessage = GetOpenSSLError();
+					EC_KEY_free(ECKey);
+					return false;
+				}
+			}
+		}
+
 		if (!EVPKey)
 		{
 			ErrorMessage = GetOpenSSLError();

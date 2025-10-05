@@ -105,6 +105,8 @@ struct UNCRYPTOOL_API FUncryptoolBigNum
 	bool SetHexString(const FString& HexString);
 	bool SetInt64(const int64 Value);
 	bool SetRand(const int32 Bits);
+	bool SetBytes(const uint8* Ptr, const int32 Num);
+	bool SetBytes(const TArray<uint8>& Bytes);
 
 	FUncryptoolBigNum Add(const FUncryptoolBigNum& Other) const;
 	FUncryptoolBigNum ModAdd(const FUncryptoolBigNum& Other, const FUncryptoolBigNum& Modulo) const;
@@ -127,6 +129,7 @@ struct UNCRYPTOOL_API FUncryptoolBigNum
 
 	FString ToString() const;
 	FString ToHexString() const;
+	TArray<uint8> ToBytes(const int32 Num) const;
 
 	void* GetNativeBigNum() const;
 	void* GetContext() const;
@@ -358,12 +361,14 @@ namespace Uncryptool
 
 	UNCRYPTOOL_API bool GenerateECKey(const EUncryptoolEllipticCurve EllipticCurve, FUncryptoolPrivateKey& PrivateKey, FUncryptoolPublicKey& PublicKey, FString& ErrorMessage);
 	UNCRYPTOOL_API bool ECPrivateKeyFromRaw(const EUncryptoolEllipticCurve EllipticCurve, const FUncryptoolBytes& InputBytes, FUncryptoolPrivateKey& PrivateKey, FString& ErrorMessage);
+	UNCRYPTOOL_API bool ECPrivateKeyFromBigNum(const EUncryptoolEllipticCurve EllipticCurve, const FUncryptoolBigNum& BigNum, FUncryptoolPrivateKey& PrivateKey, FString& ErrorMessage);
 	UNCRYPTOOL_API bool ECDSADigestSign(const FUncryptoolPrivateKey& PrivateKey, const FUncryptoolBytes& InputBytes, const EUncryptoolHash Hash, TArray<uint8>& OutputSignature, FString& ErrorMessage);
 	UNCRYPTOOL_API bool ECDSADigestVerify(const FUncryptoolPublicKey& PublicKey, const FUncryptoolBytes& InputBytes, const EUncryptoolHash Hash, const FUncryptoolBytes& SignatureBytes, FString& ErrorMessage);
 	UNCRYPTOOL_API bool ECDH(const FUncryptoolPrivateKey& PrivateKey, const FUncryptoolPublicKey& PublicKey, TArray<uint8>& OutputSharedSecret, FString& ErrorMessage);
 
 	UNCRYPTOOL_API bool GenerateKeyFromCustomEllipticCurve(const FUncryptoolEllipticCurve& EllipticCurve, FUncryptoolPrivateKey& PrivateKey, FUncryptoolPublicKey& PublicKey, FString& ErrorMessage);
-	UNCRYPTOOL_API bool ECPrivateKeyToCustomEllipticCurve(const FUncryptoolPrivateKey& PrivateKey, FUncryptoolEllipticCurve& EllipticCurve, FString& ErrorMessage);
+	UNCRYPTOOL_API bool ECPrivateKeyToCustomEllipticCurve(const FUncryptoolPrivateKey& PrivateKey, FUncryptoolEllipticCurve& EllipticCurve, FUncryptoolBigNum& D, FString& ErrorMessage);
+	UNCRYPTOOL_API bool ECPublicKeyToCustomEllipticCurve(const FUncryptoolPublicKey& PublicKey, FUncryptoolEllipticCurve& EllipticCurve, FUncryptoolBigNum& Qx, FUncryptoolBigNum& Qy, FString& ErrorMessage);
 
 	/*
 	* RSA
